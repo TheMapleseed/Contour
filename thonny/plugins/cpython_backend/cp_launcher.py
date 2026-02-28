@@ -35,10 +35,12 @@ if __name__ == "__main__":
                 file=sys.stderr,
             )
 
-    if not sys.version_info > (3, 9):
+    if sys.version_info < (3, 14):
         print(
-            "This version of Thonny only supports Python 3.9 and later.\n"
-            + "Choose another interpreter from Tools => Options => Interpreter",
+            "Contour backend requires Python 3.14 or newer (you have {}.{}).\n"
+            "Use the Contour launcher so the correct interpreter is used.".format(
+                sys.version_info.major, sys.version_info.minor
+            ),
             file=sys.stderr,
         )
         sys.exit(1)

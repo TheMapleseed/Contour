@@ -262,16 +262,49 @@ def serialize_message(msg: Record, max_line_length=65536) -> str:
     return MESSAGE_MARKER + str(len(lines)) + " " + "\n".join(lines)
 
 
+# Minimal globals for safe parsing of backend messages (repr output). No __builtins__,
+# so eval cannot access __import__, open, getattr, etc. Used by parse_message().
+# Include all Record subclasses that appear in serialized messages so eval can reconstruct them.
+_SAFE_EVAL_GLOBALS: Dict[str, Any] = {
+    "nan": float("nan"),
+    "None": None,
+    "True": True,
+    "False": False,
+    "int": int,
+    "float": float,
+    "str": str,
+    "tuple": tuple,
+    "list": list,
+    "dict": dict,
+    "set": set,
+    "bytes": bytes,
+    "Ellipsis": Ellipsis,
+    # Command/response types serialized over the frontend-backend pipe
+    "InputSubmission": InputSubmission,
+    "CommandToBackend": CommandToBackend,
+    "ImmediateCommand": ImmediateCommand,
+    "EOFCommand": EOFCommand,
+    "ToplevelCommand": ToplevelCommand,
+    "DebuggerCommand": DebuggerCommand,
+    "InlineCommand": InlineCommand,
+    "MessageFromBackend": MessageFromBackend,
+    "ToplevelResponse": ToplevelResponse,
+    "DebuggerResponse": DebuggerResponse,
+    "BackendEvent": BackendEvent,
+    "OscEvent": OscEvent,
+    "InlineResponse": InlineResponse,
+}
+
+
 def parse_message(msg_string: str) -> Record:
-    # DataFrames may have nan
-    # pylint: disable=unused-variable
-    locals()["nan"] = float("nan")
+    """Parse a serialized message from the backend. Uses restricted eval (no __builtins__)."""
     assert msg_string[0] == MESSAGE_MARKER
     assert msg_string.strip().endswith(")")
     msg_start = msg_string.index(" ")
     line_count = int(msg_string[1:msg_start])
     assert line_count == msg_string.strip().count("\n") + 1
-    return eval(msg_string[msg_start:].replace("\n", ""))
+    payload = msg_string[msg_start:].replace("\n", "")
+    return eval(payload, _SAFE_EVAL_GLOBALS, {})  # nosec B307 - restricted globals, no __builtins__
 
 
 def normpath_with_actual_case(name: str) -> str:
@@ -639,7 +672,7 @@ def execute_system_command(cmd, cwd=None, disconnect_stdin=False):
     popen_kw["encoding"] = encoding
 
     if isinstance(cmd.cmd_line, str) and cmd.cmd_line.startswith("!"):
-        cmd_line = cmd.cmd_line[1:]
+        cmd_line = cmd.cmd_line[1:]  # user-initiated system shell command
         popen_kw["shell"] = True
     else:
         assert isinstance(cmd.cmd_line, list)

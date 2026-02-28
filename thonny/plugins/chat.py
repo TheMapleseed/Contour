@@ -1,13 +1,14 @@
 import datetime
+import json
 import os.path
 import re
 import threading
 import tkinter as tk
 import uuid
-from dataclasses import replace
+from dataclasses import asdict, replace
 from typing import Dict, List, Optional, Tuple
 
-from thonny import get_runner, get_shell, get_workbench, rst_utils, tktextext, ui_utils
+from thonny import get_runner, get_shell, get_thonny_user_dir, get_workbench, rst_utils, tktextext, ui_utils
 from thonny.assistance import (
     Assistant,
     Attachment,
@@ -146,6 +147,79 @@ class ChatView(tktextext.TextFrame):
         self.bind("<<ThemeChanged>>", self._on_theme_changed, True)
         self.bind("<Configure>", self._on_configure, True)
         get_workbench().bind("WorkbenchReady", self._workspace_ready, True)
+        get_workbench().bind("WorkbenchClose", self._on_workbench_close, True)
+
+    def _get_chat_history_path(self) -> str:
+        return os.path.join(get_thonny_user_dir(), "chat_history.json")
+
+    def _save_chat_history(self) -> None:
+        """Persist chat messages to disk so they survive restart."""
+        if not self._chat_messages:
+            return
+        try:
+            path = self._get_chat_history_path()
+            data = []
+            for msg in self._chat_messages:
+                data.append({
+                    "role": msg.role,
+                    "content": msg.content,
+                    "attachments": [asdict(a) for a in msg.attachments],
+                })
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            logger.warning("Could not save chat history: %s", e)
+
+    def _load_chat_history(self) -> None:
+        """Load chat messages from disk and render into the view."""
+        path = self._get_chat_history_path()
+        if not os.path.isfile(path):
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self._chat_messages.clear()
+            for item in data:
+                attachments = [
+                    Attachment(
+                        description=a["description"],
+                        tag=a.get("tag"),
+                        content=a["content"],
+                    )
+                    for a in item.get("attachments", [])
+                ]
+                self._chat_messages.append(
+                    ChatMessage(
+                        role=item.get("role", "user"),
+                        content=item.get("content", ""),
+                        attachments=attachments,
+                    )
+            self._render_messages_to_text()
+        except Exception as e:
+            logger.warning("Could not load chat history: %s", e)
+
+    def _render_messages_to_text(self) -> None:
+        """Repopulate the chat text widget from _chat_messages (e.g. after load)."""
+        self.text.direct_delete("1.0", "end")
+        for msg in self._chat_messages:
+            if msg.role == "user":
+                self._append_text("\n")
+                self._append_text(msg.content, tags=("user_message",))
+                if msg.attachments:
+                    self._append_text(" 📎", tags=("user_message",))
+                self._append_text("\n\n")
+            else:
+                if msg.content:
+                    self._append_text(msg.content, source="chat")
+                self._append_text("\n")
+
+    def _on_workbench_close(self, event=None) -> None:
+        self._save_chat_history()
+
+    def destroy(self) -> None:
+        get_workbench().unbind("WorkbenchClose", self._on_workbench_close)
+        super().destroy()
 
     def create_query_panel(self) -> tk.Frame:
 
@@ -311,6 +385,7 @@ class ChatView(tktextext.TextFrame):
         self._update_suggestions_box()
 
     def _workspace_ready(self, event: tk.Event) -> None:
+        self._load_chat_history()
         self._update_suggestions()
 
     def _explain_exception(self, error_info):
@@ -581,9 +656,18 @@ class ChatView(tktextext.TextFrame):
 
     def _complete_chat_in_thread(self, assistant: Assistant, request_id: str):
         try:
-            # TODO: pass editor contents from UI thread
+            # Git context (cwd captured when request started)
+            git_info = None
+            try:
+                from thonny.plugins.git_support import get_git_context_summary
+                cwd = get_workbench().get_local_cwd()
+                if cwd:
+                    git_info = get_git_context_summary(cwd)
+            except Exception:
+                pass
             context = ChatContext(
                 messages=self._chat_messages,
+                git_info=git_info,
             )
             for fragment in assistant.complete_chat(context):
                 get_workbench().queue_event(

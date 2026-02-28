@@ -622,7 +622,7 @@ class SshMixin(UploadDownloadMixin):
         self._sftp = None  # type: Optional[paramiko.SFTPClient]
         self._client = SSHClient()
         self._client.load_system_host_keys()
-        self._client.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
+        self._client.set_missing_host_key_policy(paramiko.client.RejectPolicy())
         # TODO: does it get closed properly after process gets killed?
         self._connect()
 
@@ -762,7 +762,7 @@ class SshMixin(UploadDownloadMixin):
             has_shebang,
         )
         if make_shebang_scripts_executable and has_shebang:
-            self._perform_sftp_operation_with_retry(lambda sftp: sftp.chmod(target_path, 0o755))
+            self._perform_sftp_operation_with_retry(lambda sftp: sftp.chmod(target_path, 0o750))
 
     def _perform_sftp_operation_with_retry(self, operation) -> Any:
         try:

@@ -89,6 +89,8 @@ def _run_in_terminal_in_linux(cmd, cwd, env, keep_open):
 
     if isinstance(cmd, list):
         cmd = " ".join(map(_shellquote, cmd))
+    else:
+        cmd = _shellquote(cmd)
 
     if keep_open:
         # http://stackoverflow.com/a/4466566/261181
@@ -110,10 +112,10 @@ def _run_in_terminal_in_linux(cmd, cwd, env, keep_open):
         # Wezterm needs each argument to be quoted separately
         parts = in_term_cmd.replace('"', "").split(
             " ", 2
-        )  # Split only twice to preserve the quoted command
+        )          # Split only twice to preserve the quoted command
 
         # cd into current working directory since wezterm doesn't mantain the working directory
-        parts[2] = "cd " + cwd + ";" + parts[2]
+        parts[2] = "cd " + _shellquote(cwd) + " ; " + parts[2]
         in_term_cmd = " ".join(f'"{part}"' for part in parts)
         whole_cmd = "{term_cmd} -e {in_term_cmd}".format(term_cmd=term_cmd, in_term_cmd=in_term_cmd)
 

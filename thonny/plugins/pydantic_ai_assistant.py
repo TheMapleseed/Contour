@@ -255,10 +255,13 @@ def _messages_to_llama_chat(context: ChatContext, assistant: Assistant) -> List[
     if instructions:
         messages.append({"role": "system", "content": instructions})
     for msg in context.messages:
+        content = assistant.format_message(msg) if msg.role == "user" else (msg.content or "")
         messages.append({
             "role": msg.role if msg.role in ("user", "assistant", "system") else "user",
-            "content": assistant.format_message(msg) if msg.role == "user" else msg.content,
+            "content": content,
         })
+    if getattr(context, "git_info", None) and messages and messages[-1].get("role") == "user":
+        messages[-1]["content"] = f"Current git context:\n{context.git_info}\n\n---\n\n{messages[-1]['content']}"
     return messages
 
 
@@ -373,6 +376,8 @@ class PydanticAIAssistant(Assistant):
 
         last_msg = context.messages[-1]
         user_content = self.format_message(last_msg)
+        if getattr(context, "git_info", None):
+            user_content = f"Current git context:\n{context.git_info}\n\n---\n\n{user_content}"
         message_history = None
         if len(context.messages) > 1:
             try:

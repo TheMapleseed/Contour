@@ -50,6 +50,7 @@ class ChatContext:
     active_file_selection: Optional[str] = None
     file_contents_by_path: Dict[str, str] = dataclasses.field(default=dict)
     execution_io: Optional[str] = None
+    git_info: Optional[str] = None
 
 
 class Assistant(ABC):

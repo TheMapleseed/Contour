@@ -21,6 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 def run() -> int:
+    if sys.version_info < (3, 14):
+        print(
+            "Contour requires Python 3.14 or newer. You have {}.{}.".format(
+                sys.version_info.major, sys.version_info.minor
+            ),
+            file=sys.stderr,
+        )
+        return 1
     # First make sure the command line is good
     parsed_args = _parse_arguments_to_dict(sys.argv[1:])
 

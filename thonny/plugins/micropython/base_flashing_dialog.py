@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from thonny import get_runner
 from thonny.common import UserError
 from thonny.languages import tr
-from thonny.misc_utils import download_and_parse_json, download_bytes
+from thonny.misc_utils import download_and_parse_json, fetch_page_httpx, _require_https
 from thonny.ui_utils import AdvancedLabel, MappingCombobox, set_text_if_different
 from thonny.workdlg import WorkDialog
 
@@ -341,7 +341,7 @@ class BaseFlashingDialog(WorkDialog, ABC):
 
                 logger.info("Downloading %r", variant["info_url"])
                 try:
-                    html_str = download_bytes(variant["info_url"]).decode("UTF-8", errors="replace")
+                    html_str = fetch_page_httpx(variant["info_url"]).decode("UTF-8", errors="replace")
                     # logger.debug("Variants info: %r", json_str)
 
                     match = re.search(latest_prerelease_regex, html_str)
@@ -446,20 +446,28 @@ class BaseFlashingDialog(WorkDialog, ABC):
         size = download_info.get("size", None)
 
         target_dir = tempfile.mkdtemp()
-        if url_protocol in ["http", "https"]:
+        if url_protocol == "https":
             inferred_filename = download_url.split("/")[-1]
+        elif url_protocol == "http":
+            raise ValueError("Remote firmware URL must be HTTPS only")
         else:
             assert os.path.isfile(download_url)
             inferred_filename = os.path.basename(download_url)
         target_filename = download_info.get("filename", inferred_filename)
+        # Prevent path traversal: keep only the base name
+        target_filename = os.path.basename(target_filename)
+        if not target_filename or target_filename.startswith(".") or ".." in target_filename:
+            target_filename = inferred_filename if url_protocol == "https" else os.path.basename(download_url)
         target_path = os.path.join(target_dir, target_filename)
 
-        if url_protocol not in ["http", "https"]:
+        if url_protocol not in ["https"]:
+            # Local file path
             logger.debug("Copying local file %r", download_url)
             shutil.copyfile(download_url, target_path)
             return target_path
 
         logger.debug("Downloading from %s", download_url)
+        _require_https(download_url)
 
         self.set_action_text(tr("Starting") + "...")
         self.append_text("Downloading from %s\n" % download_url)

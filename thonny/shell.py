@@ -8,6 +8,7 @@ import traceback
 from _tkinter import TclError
 from dataclasses import dataclass
 from logging import getLogger
+import sys
 from tkinter import ttk
 from typing import List, Optional
 
@@ -291,7 +292,12 @@ class ShellView(tk.PanedWindow):
         if prelude is not None:
             self.text.direct_insert("end", prelude + "\n", ("stderr",))
 
-        self.text.direct_insert("end", traceback.format_exc() + "\n", ("stderr",))
+        if get_workbench().get_option("general.debug_mode", False):
+            self.text.direct_insert("end", traceback.format_exc() + "\n", ("stderr",))
+        else:
+            (typ, value, _) = sys.exc_info()
+            short = f"{typ.__name__}: {value}" if typ and value else "Internal error"
+            self.text.direct_insert("end", short + "\nSee frontend.log for details.\n", ("stderr",))
 
         if conclusion is not None:
             self.text.direct_insert("end", conclusion + "\n", ("stderr",))

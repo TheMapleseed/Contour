@@ -36,7 +36,7 @@ from thonny.languages import tr
 from thonny.misc_utils import (
     construct_cmd_line,
     download_and_parse_json,
-    download_bytes,
+    get_bytes_from_data_url,
     get_menu_char,
     jaro_similarity,
 )
@@ -1515,7 +1515,7 @@ class StubsPipFrame(PipFrame):
 def perform_pypi_search(query: str, data_url: str, common_tokens: List[str]) -> List[DistInfo]:
     logger.info("Performing PyPI search for %r", query)
 
-    data = download_bytes(data_url)
+    data = get_bytes_from_data_url(data_url)
     packages: List[Dict] = json.loads(data)
 
     canonical_query = canonicalize_name(query)

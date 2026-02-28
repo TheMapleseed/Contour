@@ -19,8 +19,10 @@ from thonny.base_file_browser import (
     BaseLocalFileBrowser,
     BaseRemoteFileBrowser,
     get_file_handler_conf_key,
+    show_hidden_files,
 )
 from thonny.common import (
+    get_dirs_children_info,
     IGNORED_FILES_AND_DIRS,
     CommandToBackend,
     InlineCommand,
@@ -136,6 +138,16 @@ class ActiveLocalFileBrowser(BaseLocalFileBrowser):
     def __init__(self, master):
         super().__init__(master)
         get_workbench().bind("ToplevelResponse", self.on_toplevel_response, True)
+
+    def request_dirs_child_data(self, node_id, paths):
+        from thonny.plugins.git_support import enrich_dir_children_with_git
+
+        data = get_dirs_children_info(paths, show_hidden_files())
+        for path, children in data.items():
+            if isinstance(children, dict):
+                enrich_dir_children_with_git(path, children)
+        self.cache_dirs_child_data(data)
+        self.render_children_from_cache(node_id)
 
     def is_active_browser(self):
         return True

@@ -16,24 +16,22 @@ This variant adds AI chat (Pydantic AI, local GGUF models) and uses the **Contou
   .. code-block:: bash
 
      ./install              # create .venv and install (recommended)
-     ./Contour              # then run Contour
+     Contour                # run from anywhere (new terminal or: source ~/.zshrc)
 
   Or install into system Python and run with it:
 
   .. code-block:: bash
 
      ./install --system     # install into system Python 3.14
-     ./Contour --system     # run Contour
+     Contour --system      # run from anywhere
 
-  To reinstall or upgrade after pulling changes: ``./install --force`` (or ``./install --force --system``). If you skip ``./install`` and run ``./Contour``, it will install on first run automatically.
+  ``./install`` adds the repo to your PATH in ``~/.zshrc`` / ``~/.bashrc`` so you can run **Contour** from any directory. Open a new terminal or run ``source ~/.zshrc`` (or ``source ~/.bashrc``) first. To reinstall or upgrade: ``./install --force`` (or ``./install --force --system``). If you skip ``./install`` and run ``./Contour`` from the repo, it will install on first run and also add PATH.
 
 **What gets installed:** The install script and Contour both install the project with extras ``pydantic-ai``, ``llama-cpp``, and ``marimo`` (AI chat, local GGUF models, Marimo notebooks). They use ``uv`` if it’s on your PATH, otherwise ``pip``.
 
 **Run options:**
-  * **Default (venv):** ``./Contour`` uses the ``.venv`` in the repo. Nothing is installed into system Python.
-  * **System Python:** ``./Contour --system`` (or set ``CONTOUR_USE_SYSTEM=1``) installs and runs with system Python 3.14. After install, you can run ``python3.14 -m thonny`` from anywhere.
-
-  On first run, Contour may add the repo directory to your PATH in ``~/.zshrc`` or ``~/.bashrc`` so you can type ``Contour`` from any directory.
+  * **Default (venv):** ``Contour`` (from anywhere) or ``./Contour`` from the repo uses the ``.venv`` in the repo.
+  * **System Python:** ``Contour --system`` (or set ``CONTOUR_USE_SYSTEM=1``) uses system Python 3.14. You can also run ``python3.14 -m thonny`` from anywhere after a system install.
 
 **Marimo:** A **Marimo** tab appears in the left panel (next to Files). Use it to start `marimo <https://github.com/marimo-team/marimo>`_ (reactive Python notebook). Marimo is installed by default.
 

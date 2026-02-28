@@ -15,6 +15,18 @@ from thonny.ui_utils import CustomToolbutton, ems_to_pixels
 
 logger = logging.getLogger(__name__)
 
+# Limit repr size before literal_eval to avoid DoS from huge backend output
+_MAX_REPR_LEN = 1024 * 1024
+
+
+def _safe_literal_eval_repr(repr_str: str, default: str = "<can't show content>"):
+    if len(repr_str) > _MAX_REPR_LEN:
+        return default
+    try:
+        return ast.literal_eval(repr_str)
+    except SyntaxError:
+        return default
+
 
 class ObjectInspector(ttk.Frame):
     def __init__(self, master):
@@ -394,15 +406,13 @@ class StringInspector(TextFrame, ContentInspector):
         return object_info["type"] == repr(str)
 
     def set_object_info(self, object_info):
-        # TODO: don't show too big string
-        try:
-            content = ast.literal_eval(object_info["repr"])
-        except SyntaxError:
+        r = object_info["repr"]
+        content = _safe_literal_eval_repr(r, "<can't show string content>")
+        if content == "<can't show string content>" and len(r) <= _MAX_REPR_LEN:
             try:
-                # can be shortened
-                content = ast.literal_eval(object_info["repr"] + object_info["repr"][0:1])
+                content = ast.literal_eval(r + r[0:1])  # can be shortened
             except SyntaxError:
-                content = "<can't show string content>"
+                pass
 
         line_count_sep = len(content.split("\n"))
         # line_count_term = len(content.splitlines())
@@ -442,9 +452,13 @@ class IntInspector(TextFrame, ContentInspector):
         return object_info["type"] == repr(int)
 
     def set_object_info(self, object_info):
-        content = ast.literal_eval(object_info["repr"])
+        r = object_info["repr"]
+        content = _safe_literal_eval_repr(r)
+        if content == "<can't show content>" or not isinstance(content, int):
+            self.text.set_content(r + "\n\n" + tr("(repr too long or invalid)"))
+            return
         self.text.set_content(
-            object_info["repr"]
+            r
             + "\n\n"
             + "bin: "
             + bin(content)

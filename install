@@ -4,14 +4,12 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
-EXTRAS="pydantic-ai,llama-cpp,marimo"
-
 usage() {
   echo "Usage: $0 [--system] [--force]"
   echo "  --system   Install into system Python 3.14 (default: install into .venv)"
   echo "  --force    Reinstall/upgrade even if already installed"
   echo ""
-  echo "Then run: ./Contour"
+  echo "Then run: Contour  (from anywhere, after opening a new terminal or sourcing your shell rc)"
 }
 
 USE_SYSTEM=
@@ -25,48 +23,103 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if ! command -v python3.14 &>/dev/null; then
-  echo "Contour requires Python 3.14+. Install it and ensure python3.14 is on your PATH." >&2
+PY314="$(command -v python3.14 2>/dev/null)"
+if [[ -z "$PY314" ]]; then
+  echo "Contour requires Python 3.14 or newer. Install it and ensure python3.14 is on your PATH." >&2
+  exit 1
+fi
+PY_MINOR="$("$PY314" -c "import sys; print(sys.version_info.minor)" 2>/dev/null)"
+if [[ -z "$PY_MINOR" ]] || [[ "$PY_MINOR" -lt 14 ]]; then
+  echo "Contour requires Python 3.14+. python3.14 reports minor version $PY_MINOR." >&2
   exit 1
 fi
 
+EXTRAS_BASE="pydantic-ai,llama-cpp,marimo"
+EXTRAS_FULL="${EXTRAS_BASE},git"
+
 do_install() {
+  local py="$1"
+  local ex="$2"
   if command -v uv &>/dev/null; then
-    uv pip install --python "$1" -e ".[$EXTRAS]" -q
+    uv pip install --python "$py" -e ".[$ex]" -q
   else
-    "$1" -m pip install -e ".[$EXTRAS]" -q
+    "$py" -m pip install -e ".[$ex]" -q
   fi
 }
 
+do_install_system() {
+  if command -v uv &>/dev/null; then
+    uv pip install --python "$PY314" --system -e ".[$1]" -q
+  else
+    "$PY314" -m pip install -e ".[$1]" -q
+  fi
+}
+
+# Try full install (with pygit2); if that fails, install dulwich and project without git extra.
+try_install_with_git_fallback() {
+  local py="$1"
+  if do_install "$py" "$EXTRAS_FULL"; then
+    return 0
+  fi
+  echo "pygit2 unavailable (e.g. no libgit2); using dulwich for git support." >&2
+  if command -v uv &>/dev/null; then
+    uv pip install --python "$py" dulwich -q
+  else
+    "$py" -m pip install dulwich -q
+  fi
+  do_install "$py" "$EXTRAS_BASE"
+}
+
+try_install_system_with_git_fallback() {
+  if do_install_system "$EXTRAS_FULL"; then
+    return 0
+  fi
+  echo "pygit2 unavailable (e.g. no libgit2); using dulwich for git support." >&2
+  if command -v uv &>/dev/null; then
+    uv pip install --python "$PY314" --system dulwich -q
+  else
+    "$PY314" -m pip install dulwich -q
+  fi
+  do_install_system "$EXTRAS_BASE"
+}
+
 if [[ -n "$USE_SYSTEM" ]]; then
-  if [[ -z "$FORCE" ]] && python3.14 -c "import thonny" &>/dev/null; then
+  if [[ -z "$FORCE" ]] && "$PY314" -c "import thonny" &>/dev/null; then
     echo "Already installed (system). Use --force to reinstall."
     exit 0
   fi
   echo "Installing Contour into system Python 3.14..."
-  if command -v uv &>/dev/null; then
-    uv pip install --python python3.14 --system -e ".[$EXTRAS]" -q
-  else
-    python3.14 -m pip install -e ".[$EXTRAS]" -q
-  fi
-  echo "Done. Run: ./Contour --system  (or: python3.14 -m thonny)"
+  try_install_system_with_git_fallback
+  echo "Done. Run: Contour  (or: python3.14 -m thonny)"
 else
   VENV_PY="$DIR/.venv/bin/python"
   if [[ ! -x "$VENV_PY" ]]; then
     echo "Creating .venv and installing Contour..."
     if command -v uv &>/dev/null; then
-      uv venv --python python3.14 "$DIR/.venv"
+      uv venv --python "$PY314" "$DIR/.venv"
     else
-      python3.14 -m venv "$DIR/.venv"
+      "$PY314" -m venv "$DIR/.venv"
     fi
-    do_install "$VENV_PY"
-    echo "Done. Run: ./Contour"
+    try_install_with_git_fallback "$VENV_PY"
+    echo "Done."
   elif [[ -n "$FORCE" ]]; then
     echo "Reinstalling Contour in .venv..."
-    do_install "$VENV_PY"
-    echo "Done. Run: ./Contour"
+    try_install_with_git_fallback "$VENV_PY"
+    echo "Done."
   else
     echo "Already installed (.venv). Use --force to reinstall."
     exit 0
   fi
 fi
+
+# Add repo to PATH so you can run Contour from anywhere
+CONTOUR_PATH_LINE="export PATH=\"$DIR:\$PATH\""
+for rc in ~/.zshrc ~/.bashrc; do
+  if [[ -f "$rc" ]] && ! grep -Fq "$DIR" "$rc" 2>/dev/null; then
+    echo "" >> "$rc"
+    echo "# Contour (run from anywhere)" >> "$rc"
+    echo "$CONTOUR_PATH_LINE" >> "$rc"
+    echo "Added $DIR to PATH in $rc — open a new terminal or run: source $rc" >&2
+  fi
+done
+echo "Run Contour from anywhere (in a new terminal or: source ~/.zshrc)" >&2

@@ -166,7 +166,7 @@ def list_volumes(skip_letters=set()) -> Sequence[str]:
 
 
 def list_volumes_with_mount_command() -> Sequence[str]:
-    mount_output = subprocess.check_output("mount").splitlines()
+    mount_output = subprocess.check_output(["mount"], text=False).splitlines()
     return [x.split()[2].decode("utf-8") for x in mount_output]
 
 
@@ -541,24 +541,75 @@ def get_menu_char():
         return "☰"  # Trigram for heaven, too heavy on Windows
 
 
-def download_bytes(url: str, timeout: int = 10) -> bytes:
-    from urllib.request import Request, urlopen
+def _require_https(url: str) -> None:
+    """Only allow https. Fetched content is raw only—never DOM, never script execution."""
+    scheme = urllib.parse.urlparse(url).scheme.lower()
+    if scheme != "https":
+        raise ValueError(f"URL scheme {scheme!r} not allowed; use https only")
 
-    req = Request(
-        url,
-        headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
-            "Accept-Encoding": "gzip, deflate",
-            "Cache-Control": "no-cache",
-        },
-    )
-    with urlopen(req, timeout=timeout) as fp:
+
+def _download_bytes_curl(url: str, timeout: int = 10) -> bytes:
+    """HTTPS GET; raw bytes only. Used for model search and scraping. No DOM, no JS—safe over open network."""
+    _require_https(url)
+    try:
+        import pycurl
+    except ImportError:
+        from urllib.request import Request, urlopen
+        req = Request(
+            url,
+            headers={
+                "User-Agent": "Contour/1.0",
+                "Accept-Encoding": "gzip, deflate",
+            },
+        )
+        with urlopen(req, timeout=timeout) as fp:
+            data = fp.read()
         if fp.info().get("Content-Encoding") == "gzip":
             import gzip
+            return gzip.decompress(data)
+        return data
+    buf = bytearray()
+    c = pycurl.Curl()
+    try:
+        c.setopt(pycurl.URL, url)
+        c.setopt(pycurl.WRITEFUNCTION, buf.extend)
+        c.setopt(pycurl.FOLLOWLOCATION, 1)
+        c.setopt(pycurl.TIMEOUT, timeout)
+        c.setopt(pycurl.USERAGENT, "Contour/1.0 (libcurl)")
+        c.setopt(pycurl.ENCODING, "gzip, deflate")
+        c.perform()
+        code = c.getinfo(pycurl.RESPONSE_CODE)
+        if code != 200:
+            from urllib.error import HTTPError
+            raise HTTPError(url, code, "HTTP error", None, None)
+        return bytes(buf)
+    finally:
+        c.close()
 
-            return gzip.decompress(fp.read())
-        else:
-            return fp.read()
+
+def fetch_page_httpx(url: str, timeout: int = 10) -> bytes:
+    """HTTPS + HTTP/2+ only for page fetches. Requires httpx[http2]. No script execution."""
+    _require_https(url)
+    try:
+        import httpx
+    except ImportError:
+        raise RuntimeError("Page fetch requires httpx with http2: pip install 'httpx[http2]'") from None
+    with httpx.Client(http2=True, http1=False, timeout=timeout) as client:
+        r = client.get(url, headers={"User-Agent": "Contour/1.0 (httpx)"})
+        r.raise_for_status()
+        if getattr(r, "http_version", None) != "HTTP/2":
+            raise RuntimeError(f"Page fetch requires HTTP/2; server used {getattr(r, 'http_version', 'unknown')}")
+        return r.content
+
+
+def get_bytes_from_data_url(url: str, timeout: int = 10) -> bytes:
+    """HTTPS only. Data URLs must use https (no file://). Uses libcurl for search/scrape."""
+    return _download_bytes_curl(url, timeout=timeout)
+
+
+def download_bytes(url: str, timeout: int = 10) -> bytes:
+    """HTTPS GET; raw text/bytes only for search/scraping. No DOM, no JS."""
+    return _download_bytes_curl(url, timeout=timeout)
 
 
 def download_and_parse_json(url: str, timeout: int = 10) -> Any:
@@ -573,6 +624,7 @@ def post_and_return_stream(
     import json
     from urllib.request import Request, urlopen
 
+    _require_https(url)
     if not isinstance(data, bytes):
         if isinstance(data, str):
             data = data.encode(encoding="utf-8")
@@ -599,6 +651,7 @@ def get_and_parse_json(url: str, headers: Dict[str, Any] = {}, timeout: int = 10
     import json
     from urllib.request import Request, urlopen
 
+    _require_https(url)
     req = Request(url, headers=headers)
 
     resp = urlopen(req, timeout=timeout)

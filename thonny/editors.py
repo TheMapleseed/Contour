@@ -479,7 +479,7 @@ class Editor(BaseEditor):
             os.fsync(f)
             f.close()
             if process_shebang:
-                os.chmod(target_path, 0o755)
+                os.chmod(target_path, 0o750)
             if not save_copy or target_path == self.get_target_path():
                 self._last_known_mtime = os.path.getmtime(target_path)
             get_workbench().event_generate("LocalFileOperation", path=target_path, operation="save")

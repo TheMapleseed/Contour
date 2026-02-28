@@ -14,19 +14,33 @@ if [[ -z "$USE_SYSTEM" && -n "$CONTOUR_USE_SYSTEM" ]]; then
 fi
 
 # Require Python 3.14 or newer
-if ! command -v python3.14 &>/dev/null; then
+PY314="$(command -v python3.14 2>/dev/null)"
+if [[ -z "$PY314" ]]; then
   echo "Contour requires Python 3.14 or newer. Install it and ensure python3.14 is on your PATH." >&2
+  exit 1
+fi
+PY_MINOR="$("$PY314" -c "import sys; print(sys.version_info.minor)" 2>/dev/null)"
+if [[ -z "$PY_MINOR" ]] || [[ "$PY_MINOR" -lt 14 ]]; then
+  echo "Contour requires Python 3.14+. The python3.14 on your PATH reports 3.$PY_MINOR." >&2
   exit 1
 fi
 
 if [[ -n "$USE_SYSTEM" ]]; then
   # System mode: install into system Python 3.14, run with it (no venv)
-  if ! python3.14 -c "import thonny" &>/dev/null; then
+  if ! "$PY314" -c "import thonny" &>/dev/null; then
     echo "First-time setup: installing Contour into system Python (with AI and local model support)..." >&2
     if command -v uv &>/dev/null; then
-      uv pip install --python python3.14 --system -e ".[pydantic-ai,llama-cpp,marimo]" -q
+      uv pip install --python "$PY314" --system -e ".[pydantic-ai,llama-cpp,marimo,git]" -q || {
+        echo "pygit2 unavailable; using dulwich for git support." >&2
+        uv pip install --python "$PY314" --system dulwich -q
+        uv pip install --python "$PY314" --system -e ".[pydantic-ai,llama-cpp,marimo]" -q
+      }
     else
-      python3.14 -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
+      "$PY314" -m pip install -e ".[pydantic-ai,llama-cpp,marimo,git]" -q || {
+        echo "pygit2 unavailable; using dulwich for git support." >&2
+        "$PY314" -m pip install dulwich -q
+        "$PY314" -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
+      }
     fi
     echo "Installed." >&2
   fi
@@ -41,20 +55,28 @@ if [[ -n "$USE_SYSTEM" ]]; then
       fi
     done
   fi
-  exec python3.14 -m thonny "$@"
+  exec "$PY314" -m thonny "$@"
 fi
 
 # Venv mode (default): create .venv and install into it if not present
 VENV_PY="$DIR/.venv/bin/python"
-if [[ ! -x "$VENV_PY" ]]; then
-  echo "First-time setup: creating venv and installing Contour (with AI and local model support)..." >&2
-  if command -v uv &>/dev/null; then
-    uv venv --python python3.14 "$DIR/.venv"
-    uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp,marimo]" -q
-  else
-    python3.14 -m venv "$DIR/.venv"
-    "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
-  fi
+  if [[ ! -x "$VENV_PY" ]]; then
+    echo "First-time setup: creating venv and installing Contour (with AI and local model support)..." >&2
+    if command -v uv &>/dev/null; then
+      uv venv --python "$PY314" "$DIR/.venv"
+      uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp,marimo,git]" -q || {
+        echo "pygit2 unavailable; using dulwich for git support." >&2
+        uv pip install --python "$VENV_PY" dulwich -q
+        uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp,marimo]" -q
+      }
+    else
+      "$PY314" -m venv "$DIR/.venv"
+      "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp,marimo,git]" -q || {
+        echo "pygit2 unavailable; using dulwich for git support." >&2
+        "$VENV_PY" -m pip install dulwich -q
+        "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
+      }
+    fi
   echo "Installed. Run Contour again to start." >&2
 fi
 

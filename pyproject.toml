@@ -8,7 +8,7 @@ version = "5.0.0b1.dev0"
 description = "Python IDE for beginners"
 readme = "README.rst"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 authors = [
     { name = "Aivar Annamaa and others", email = "thonny@googlegroups.com" },
 ]
@@ -76,6 +76,20 @@ llama-cpp = [
 marimo = [
   "marimo>=0.20.0",
 ]
+git = [
+  "pygit2>=1.14.0",
+]
+# Fallback when pygit2 cannot be installed (e.g. no libgit2): pip install dulwich
+git-dulwich = [
+  "dulwich>=0.22.0",
+]
+# libcurl for model search and scraping; httpx for browser-like page fetches
+curl = [
+  "pycurl>=7.45.0",
+]
+fetch-httpx = [
+  "httpx[http2]>=0.28.0",
+]
 
 [project.urls]
 "Bug tracker" = "https://github.com/thonny/thonny/issues"
@@ -91,9 +105,12 @@ thonny = "thonny.main:run"
 
 [dependency-groups]
 dev = [
+    "bandit[toml]>=1.7.0",
     "black>=24.8.0",
     "isort>=5.13.2",
+    "pip-audit>=2.0.0",
     "pyrefly",
+    "sigstore>=2.0.0",
     "requests>=2.32.2",
     "paramiko>=3.4.0",
     "ptyprocess",
@@ -148,3 +165,8 @@ include = [
 ignore = [
     "E402"
 ]
+
+[tool.bandit]
+exclude_dirs = ["thonny/vendored_libs", "thonny/test"]
+skips = ["B101"]  # assert_used — acceptable in tests and invariants
+# Optional: run with --configfile pyproject.toml; skip B104 (hardcoded_bind_all_interfaces) if only local

@@ -13,6 +13,7 @@ import urllib.request
 from typing import List, Tuple
 
 from thonny import get_thonny_user_dir
+from thonny.misc_utils import _require_https
 
 
 def _ssl_context() -> ssl.SSLContext | None:
@@ -91,7 +92,8 @@ def download_file(
     force: bool = False,
     progress_callback=None,
 ) -> bool:
-    """Download url to dest_path. progress_callback(percent, size_mb, total_mb) if given."""
+    """Download url to dest_path (HTTPS only). progress_callback(percent, size_mb, total_mb) if given."""
+    _require_https(url)
     if os.path.isfile(dest_path) and not force:
         return False
     dest_dir = os.path.dirname(dest_path)

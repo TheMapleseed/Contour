@@ -1280,7 +1280,7 @@ class Executor:
     @return_execution_result
     @prepare_hooks
     def _execute_prepared_user_code(self, statements, global_vars):
-        exec(statements, global_vars)
+        exec(statements, global_vars)  # nosec B102 - user code in isolated backend process
 
     def find_spec(self, fullname, path=None, target=None):
         """override in subclass for custom-loading user modules"""
