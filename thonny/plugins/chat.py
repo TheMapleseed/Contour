@@ -662,4 +662,4 @@ class ChatView(tktextext.TextFrame):
 
 
 def load_plugin():
-    get_workbench().add_view(ChatView, tr("Chat"), "se", visible_by_default=False)
+    get_workbench().add_view(ChatView, tr("Chat"), "e", visible_by_default=True)

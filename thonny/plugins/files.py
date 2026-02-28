@@ -627,7 +627,7 @@ def load_plugin() -> None:
     get_workbench().set_default(FILE_DIALOG_WIDTH_EMS_OPTION, 60)
     get_workbench().set_default(FILE_DIALOG_HEIGHT_EMS_OPTION, 35)
 
-    get_workbench().add_view(FilesView, tr("Files"), "nw")
+    get_workbench().add_view(FilesView, tr("Files"), "nw", visible_by_default=True)
 
     # NB! Keep these in lowercase
     for ext in [
