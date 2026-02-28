@@ -36,6 +36,8 @@ from thonny.ui_utils import (
 
 
 class ChatView(tktextext.TextFrame):
+    """Flexible chat panel: resizes with the east pane; use @PydanticAI or default assistant."""
+
     def __init__(self, master):
         tktextext.TextFrame.__init__(
             self,
@@ -44,13 +46,13 @@ class ChatView(tktextext.TextFrame):
             read_only=True,
             wrap="word",
             font="TkDefaultFont",
-            # cursor="arrow",
             padx=10,
             pady=0,
             insertwidth=0,
             background="white",
             suppress_events=True,
         )
+        self.rowconfigure(1, weight=0)  # query area fixed height; row 0 (text) gets weight from parent
 
         self._analyzer_instances = []
 
@@ -130,10 +132,11 @@ class ChatView(tktextext.TextFrame):
 
         self.query_box = self.create_query_panel()
         self.query_box.grid(row=1, column=1, sticky="nsew")
-
-        from thonny.plugins.openai import OpenAIAssistant
-
-        self._current_assistant: Assistant = EchoAssistant()
+        # Prefer Pydantic AI when available (APIs + local e.g. llama.cpp); else Echo
+        if "pydanticai" in get_workbench().assistants:
+            self._current_assistant = get_workbench().assistants["pydanticai"]
+        else:
+            self._current_assistant = EchoAssistant()
 
         get_workbench().bind("ToplevelResponse", self.handle_toplevel_response, True)
         get_workbench().bind(

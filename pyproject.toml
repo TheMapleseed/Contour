@@ -63,11 +63,23 @@ ssh = [
 pty = [
   "ptyprocess>=0.7.0"
 ]
+pydantic-ai = [
+  "pydantic-ai>=0.0.20",
+  "openai>=1.0.0",
+  "certifi>=2024.0.0",
+]
+llama-cpp = [
+  "llama-cpp-python>=0.2.0",
+  "certifi>=2024.0.0",
+]
 
 [project.urls]
 "Bug tracker" = "https://github.com/thonny/thonny/issues"
 Homepage = "https://thonny.org"
 "Source code" = "https://github.com/thonny/thonny"
+
+[project.scripts]
+Contour = "thonny.main:run"
 
 [project.gui-scripts]
 thonny = "thonny.main:run"

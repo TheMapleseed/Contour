@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Contour launcher: run Thonny from this repo. Requires Python 3.14+.
+# Default: use a venv in .venv (create and install on first run).
+# Option: CONTOUR_USE_SYSTEM=1 or ./Contour --system to use system Python instead.
+set -e
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$DIR"
+
+# Prefer --system flag, then CONTOUR_USE_SYSTEM env (1, true, yes)
+USE_SYSTEM=
+[[ "$1" == "--system" ]] && { USE_SYSTEM=1; shift; }
+if [[ -z "$USE_SYSTEM" && -n "$CONTOUR_USE_SYSTEM" ]]; then
+  case "$CONTOUR_USE_SYSTEM" in 1|true|yes|TRUE|YES) USE_SYSTEM=1;; esac
+fi
+
+# Require Python 3.14 or newer
+if ! command -v python3.14 &>/dev/null; then
+  echo "Contour requires Python 3.14 or newer. Install it and ensure python3.14 is on your PATH." >&2
+  exit 1
+fi
+
+if [[ -n "$USE_SYSTEM" ]]; then
+  # System mode: install into system Python 3.14, run with it (no venv)
+  if ! python3.14 -c "import thonny" &>/dev/null; then
+    echo "First-time setup: installing Contour into system Python (with AI and local model support)..." >&2
+    if command -v uv &>/dev/null; then
+      uv pip install --python python3.14 --system -e ".[pydantic-ai,llama-cpp]" -q
+    else
+      python3.14 -m pip install -e ".[pydantic-ai,llama-cpp]" -q
+    fi
+    echo "Installed." >&2
+  fi
+  if ! command -v Contour &>/dev/null; then
+    CONTOUR_PATH_LINE="export PATH=\"$DIR:\$PATH\""
+    for rc in ~/.zshrc ~/.bashrc; do
+      if [[ -f "$rc" ]] && ! grep -Fq "$DIR" "$rc" 2>/dev/null; then
+        echo "" >> "$rc"
+        echo "# Contour launcher (added by Contour first run)" >> "$rc"
+        echo "$CONTOUR_PATH_LINE" >> "$rc"
+        echo "Added repo to PATH in $rc — open a new terminal or run: source $rc" >&2
+      fi
+    done
+  fi
+  exec python3.14 -m thonny "$@"
+fi
+
+# Venv mode (default): create .venv and install into it if not present
+VENV_PY="$DIR/.venv/bin/python"
+if [[ ! -x "$VENV_PY" ]]; then
+  echo "First-time setup: creating venv and installing Contour (with AI and local model support)..." >&2
+  if command -v uv &>/dev/null; then
+    uv venv --python python3.14 "$DIR/.venv"
+    uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp]" -q
+  else
+    python3.14 -m venv "$DIR/.venv"
+    "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp]" -q
+  fi
+  echo "Installed. Run Contour again to start." >&2
+fi
+
+if ! command -v Contour &>/dev/null; then
+  CONTOUR_PATH_LINE="export PATH=\"$DIR:\$PATH\""
+  for rc in ~/.zshrc ~/.bashrc; do
+    if [[ -f "$rc" ]] && ! grep -Fq "$DIR" "$rc" 2>/dev/null; then
+      echo "" >> "$rc"
+      echo "# Contour launcher (added by Contour first run)" >> "$rc"
+      echo "$CONTOUR_PATH_LINE" >> "$rc"
+      echo "Added repo to PATH in $rc — open a new terminal or run: source $rc" >&2
+    fi
+  done
+fi
+
+exec "$VENV_PY" -m thonny "$@"
