@@ -1,6 +1,7 @@
 import os.path
 import platform
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -31,8 +32,11 @@ def open_system_shell(cwd, env_overrides={}):
     if sys.platform == "darwin":
         _run_in_terminal_in_macos([], cwd, env_overrides, True)
     elif sys.platform == "win32":
-        cmd = "start " + _get_windows_terminal_command()
-        subprocess.Popen(cmd, cwd=cwd, env=env, shell=True)
+        term_cmd = _get_windows_terminal_command()
+        if term_cmd == "wt":
+            subprocess.Popen(["wt", "-d", cwd], env=env)
+        else:
+            subprocess.Popen("start " + term_cmd, cwd=cwd, env=env, shell=True)
     elif sys.platform == "linux":
         cmd = _get_linux_terminal_command()
         subprocess.Popen(cmd, cwd=cwd, env=env, shell=True)
@@ -55,10 +59,24 @@ def _add_to_path(directory, path):
 
 
 def _run_in_terminal_in_windows(cmd, cwd, env, keep_open):
+    if isinstance(cmd, list):
+        cmd_str = subprocess.list2cmdline(cmd)
+    else:
+        cmd_str = cmd
     if keep_open:
         term_cmd = _get_windows_terminal_command()
-        cmd_line = ["start", term_cmd, "-NoExit", "-Command"] + cmd
-        subprocess.Popen(cmd_line, cwd=cwd, env=env, shell=True)
+        if term_cmd == "wt":
+            # Windows Terminal: wt -d cwd shell -NoExit -Command "cmd"
+            shell_cmd = "pwsh" if shutil.which("pwsh") else "powershell"
+            subprocess.Popen(
+                ["wt", "-d", cwd, shell_cmd, "-NoExit", "-Command", cmd_str],
+                env=env,
+            )
+        else:
+            # start shell -NoExit -Command "cmd" (cmd_str quoted for cmd.exe)
+            cmd_str_escaped = cmd_str.replace('"', '\\"')
+            full = 'start "" {} -NoExit -Command "{}"'.format(term_cmd, cmd_str_escaped)
+            subprocess.Popen(full, cwd=cwd, env=env, shell=True)
     else:
         subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE, cwd=cwd, env=env)
 
@@ -186,19 +204,17 @@ def _run_in_terminal_in_macos(cmd, cwd, env_overrides, keep_open):
 
 
 def _get_windows_terminal_command():
-    import shutil
-
+    if shutil.which("wt"):
+        # Windows Terminal (Windows 10/11) - preferred
+        return "wt"
     if shutil.which("pwsh"):
-        # PowerShell version 6+
+        # PowerShell 6+
         return "pwsh"
-    else:
-        # Windows PowerShell 5.1
-        return "powershell"
+    # Windows PowerShell 5.1
+    return "powershell"
 
 
 def _get_linux_terminal_command():
-    import shutil
-
     xte = shutil.which("x-terminal-emulator")
     if xte:
         if os.path.realpath(xte).endswith("/lxterminal") and shutil.which("lxterminal"):

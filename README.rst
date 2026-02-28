@@ -11,24 +11,33 @@ This variant adds AI chat (Pydantic AI, local GGUF models) and uses the **Contou
 
 **Requirements:** Python 3.14 or newer on your PATH (as ``python3.14``).
 
-**Run from the repo:**
+**Install (choose one):**
 
-  ./Contour
+  .. code-block:: bash
 
-First run will install the project (with AI and local-model extras) and add the repo to your PATH so you can type ``Contour`` from any directory next time.
+     ./install              # create .venv and install (recommended)
+     ./Contour              # then run Contour
 
-**How Contour chooses where to run**
-  * **Default — venv:** Contour creates a virtual environment in ``.venv/`` in the repo, installs the project and its dependencies there, and runs Thonny with that venv’s Python. Nothing is installed into your system Python. Use this if you want an isolated environment.
-  * **Optional — system Python:** To install and run using system Python 3.14 instead of a venv, use either:
+  Or install into system Python and run with it:
 
-    * **Flag:** ``./Contour --system`` (or ``Contour --system``)
-    * **Environment variable:** ``CONTOUR_USE_SYSTEM=1`` (e.g. ``export CONTOUR_USE_SYSTEM=1`` in ``.zshrc`` or ``.bashrc`` so every ``Contour`` run uses system Python)
+  .. code-block:: bash
 
-  In system mode, the first run installs into system Python 3.14 (with ``uv`` if available, else ``pip``); later runs start Thonny with ``python3.14 -m thonny``.
+     ./install --system     # install into system Python 3.14
+     ./Contour --system     # run Contour
 
-**Install tool:** If ``uv`` is on your PATH, the launcher uses it for installs; otherwise it uses ``pip``. Both venv and system modes install the ``pydantic-ai`` and ``llama-cpp`` extras so AI chat and local GGUF models work.
+  To reinstall or upgrade after pulling changes: ``./install --force`` (or ``./install --force --system``). If you skip ``./install`` and run ``./Contour``, it will install on first run automatically.
 
-**Full launcher script (``Contour``)** — save as ``Contour`` in the repo root, ``chmod +x Contour``, then run ``./Contour``:
+**What gets installed:** The install script and Contour both install the project with extras ``pydantic-ai``, ``llama-cpp``, and ``marimo`` (AI chat, local GGUF models, Marimo notebooks). They use ``uv`` if it’s on your PATH, otherwise ``pip``.
+
+**Run options:**
+  * **Default (venv):** ``./Contour`` uses the ``.venv`` in the repo. Nothing is installed into system Python.
+  * **System Python:** ``./Contour --system`` (or set ``CONTOUR_USE_SYSTEM=1``) installs and runs with system Python 3.14. After install, you can run ``python3.14 -m thonny`` from anywhere.
+
+  On first run, Contour may add the repo directory to your PATH in ``~/.zshrc`` or ``~/.bashrc`` so you can type ``Contour`` from any directory.
+
+**Marimo:** A **Marimo** tab appears in the left panel (next to Files). Use it to start `marimo <https://github.com/marimo-team/marimo>`_ (reactive Python notebook). Marimo is installed by default.
+
+**Scripts:** ``install`` — install or upgrade (``./install``, ``./install --system``, ``./install --force``). ``Contour`` — run the IDE. In the repo root run ``chmod +x Contour install``. Full **Contour** script:
 
 .. code-block:: bash
 
@@ -58,9 +67,9 @@ First run will install the project (with AI and local-model extras) and add the 
      if ! python3.14 -c "import thonny" &>/dev/null; then
        echo "First-time setup: installing Contour into system Python (with AI and local model support)..." >&2
        if command -v uv &>/dev/null; then
-         uv pip install --python python3.14 --system -e ".[pydantic-ai,llama-cpp]" -q
+         uv pip install --python python3.14 --system -e ".[pydantic-ai,llama-cpp,marimo]" -q
        else
-         python3.14 -m pip install -e ".[pydantic-ai,llama-cpp]" -q
+         python3.14 -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
        fi
        echo "Installed." >&2
      fi
@@ -84,10 +93,10 @@ First run will install the project (with AI and local-model extras) and add the 
      echo "First-time setup: creating venv and installing Contour (with AI and local model support)..." >&2
      if command -v uv &>/dev/null; then
        uv venv --python python3.14 "$DIR/.venv"
-       uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp]" -q
+       uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp,marimo]" -q
      else
        python3.14 -m venv "$DIR/.venv"
-       "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp]" -q
+       "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
      fi
      echo "Installed. Run Contour again to start." >&2
    fi

@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Install Contour (AI, Marimo, local models). Then run: ./Contour
+set -e
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$DIR"
+
+EXTRAS="pydantic-ai,llama-cpp,marimo"
+
+usage() {
+  echo "Usage: $0 [--system] [--force]"
+  echo "  --system   Install into system Python 3.14 (default: install into .venv)"
+  echo "  --force    Reinstall/upgrade even if already installed"
+  echo ""
+  echo "Then run: ./Contour"
+}
+
+USE_SYSTEM=
+FORCE=
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --system) USE_SYSTEM=1; shift ;;
+    --force)  FORCE=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
+  esac
+done
+
+if ! command -v python3.14 &>/dev/null; then
+  echo "Contour requires Python 3.14+. Install it and ensure python3.14 is on your PATH." >&2
+  exit 1
+fi
+
+do_install() {
+  if command -v uv &>/dev/null; then
+    uv pip install --python "$1" -e ".[$EXTRAS]" -q
+  else
+    "$1" -m pip install -e ".[$EXTRAS]" -q
+  fi
+}
+
+if [[ -n "$USE_SYSTEM" ]]; then
+  if [[ -z "$FORCE" ]] && python3.14 -c "import thonny" &>/dev/null; then
+    echo "Already installed (system). Use --force to reinstall."
+    exit 0
+  fi
+  echo "Installing Contour into system Python 3.14..."
+  if command -v uv &>/dev/null; then
+    uv pip install --python python3.14 --system -e ".[$EXTRAS]" -q
+  else
+    python3.14 -m pip install -e ".[$EXTRAS]" -q
+  fi
+  echo "Done. Run: ./Contour --system  (or: python3.14 -m thonny)"
+else
+  VENV_PY="$DIR/.venv/bin/python"
+  if [[ ! -x "$VENV_PY" ]]; then
+    echo "Creating .venv and installing Contour..."
+    if command -v uv &>/dev/null; then
+      uv venv --python python3.14 "$DIR/.venv"
+    else
+      python3.14 -m venv "$DIR/.venv"
+    fi
+    do_install "$VENV_PY"
+    echo "Done. Run: ./Contour"
+  elif [[ -n "$FORCE" ]]; then
+    echo "Reinstalling Contour in .venv..."
+    do_install "$VENV_PY"
+    echo "Done. Run: ./Contour"
+  else
+    echo "Already installed (.venv). Use --force to reinstall."
+    exit 0
+  fi
+fi

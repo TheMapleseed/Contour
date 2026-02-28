@@ -24,9 +24,9 @@ if [[ -n "$USE_SYSTEM" ]]; then
   if ! python3.14 -c "import thonny" &>/dev/null; then
     echo "First-time setup: installing Contour into system Python (with AI and local model support)..." >&2
     if command -v uv &>/dev/null; then
-      uv pip install --python python3.14 --system -e ".[pydantic-ai,llama-cpp]" -q
+      uv pip install --python python3.14 --system -e ".[pydantic-ai,llama-cpp,marimo]" -q
     else
-      python3.14 -m pip install -e ".[pydantic-ai,llama-cpp]" -q
+      python3.14 -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
     fi
     echo "Installed." >&2
   fi
@@ -50,10 +50,10 @@ if [[ ! -x "$VENV_PY" ]]; then
   echo "First-time setup: creating venv and installing Contour (with AI and local model support)..." >&2
   if command -v uv &>/dev/null; then
     uv venv --python python3.14 "$DIR/.venv"
-    uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp]" -q
+    uv pip install --python "$VENV_PY" -e ".[pydantic-ai,llama-cpp,marimo]" -q
   else
     python3.14 -m venv "$DIR/.venv"
-    "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp]" -q
+    "$VENV_PY" -m pip install -e ".[pydantic-ai,llama-cpp,marimo]" -q
   fi
   echo "Installed. Run Contour again to start." >&2
 fi

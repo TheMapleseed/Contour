@@ -53,24 +53,28 @@ dependencies = [
     "pylint>=2.16.2",
     "Send2Trash>=1.8.0",
     "wheel>=0.38.4",
-    "esptool"
+    "esptool",
+    "urllib3>=2.6.3",
 ]
 
 [project.optional-dependencies]
 ssh = [
-  "paramiko>=2.12.0"
+  "paramiko>=3.4.0"
 ]
 pty = [
   "ptyprocess>=0.7.0"
 ]
 pydantic-ai = [
-  "pydantic-ai>=0.0.20",
+  "pydantic-ai>=1.56.0",
   "openai>=1.0.0",
   "certifi>=2024.0.0",
 ]
 llama-cpp = [
   "llama-cpp-python>=0.2.0",
   "certifi>=2024.0.0",
+]
+marimo = [
+  "marimo>=0.20.0",
 ]
 
 [project.urls]
@@ -90,8 +94,8 @@ dev = [
     "black>=24.8.0",
     "isort>=5.13.2",
     "pyrefly",
-    "requests",
-    "paramiko",
+    "requests>=2.32.2",
+    "paramiko>=3.4.0",
     "ptyprocess",
     "ruff",
 ]
@@ -103,7 +107,8 @@ source-exclude = ["registered.json", ".mypy_cache"]
 source-include = ["/defaults.ini"]
 
 [tool.uv.sources]
-minny = { path = "../minny", editable = true }
+# minny is on PyPI (https://pypi.org/project/minny/). Omit the override above to use it from PyPI.
+# For Thonny dev with a local minny repo next to thonny, use: minny = { path = "../minny", editable = true }
 
 [tool.black]
 line-length = 100
