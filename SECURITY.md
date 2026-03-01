@@ -19,7 +19,7 @@ This document maps common Python hardening practices to Contour and what maintai
   - **Bandit** (dev): `uv run bandit -r thonny -c pyproject.toml` to find common issues. Excludes `thonny/vendored_libs` and tests.
   - **pip-audit** (dev): `uv run pip-audit` to check dependencies against known vulnerabilities. Run after dependency changes.
 - **Pinning:** Dependencies are pinned in `uv.lock` (or equivalent lockfile). Use the lockfile for reproducible installs.
-- **Sigstore** (dev): `sigstore` is in the dev group for signing and verifying artifacts (keyless signing, verification against the Sigstore transparency log). **Releases:** When you publish a GitHub release, the workflow [`.github/workflows/release-sign.yml`](.github/workflows/release-sign.yml) signs all release assets using GitHub OIDC (no long-lived keys). Each asset gets a `.sig` and `.cert` file uploaded to the same release.
+- **Sigstore** (dev): Think of Sigstore as a **digital notary** for your code. Instead of a physical stamp or a permanent secret key (which can be stolen), it uses your GitHub identity to prove that your specific GitHub Action produced the files. No long-lived keys; each asset gets a `.sig` and `.cert` next to it on the release. See "Release flow and Sigstore" below.
 
 ## 3. Data and secrets
 
@@ -43,19 +43,46 @@ uv run pip-audit
 uv run sigstore --help   # sign/verify artifacts
 ```
 
-## Verifying release signatures (downloaders)
+## Release flow and Sigstore (beta: 0.1.0)
+
+**What are the assets?** For this Python project they are the same files you’d send to PyPI: the **wheel** (`.whl` — ready-to-install) and the **tarball** (`.tar.gz` — source). The release workflow builds these, uploads them to the GitHub release, then has Sigstore sign them.
+
+**How the "notary" works:** (1) **Identity** — When the GitHub Action runs, it gets a temporary "ID badge" (OIDC token) from GitHub. (2) **Signing** — Sigstore checks that badge, confirms it’s this repo’s workflow, and creates a `.sig` and `.cert` for each file. (3) **Public record** — The event is recorded in Rekor (a public, append-only log). If someone swapped your code for a tampered version, the signature wouldn’t match and a user’s verify command would fail.
+
+**What actually happens:**
+
+1. **Publish the release** — On GitHub, create a release from a tag (e.g. `v0.1.0`) and click Publish (you don’t need to upload files manually).
+2. **Build and sign** — [`.github/workflows/release-sign.yml`](.github/workflows/release-sign.yml) runs: builds `.whl` and `.tar.gz`, uploads them to the release, then runs the Sigstore action with `release-signing-artifacts: true` so every asset gets a `.sig` and `.cert` on the release page. The workflow uses `id-token: write` (the "ID badge") and `contents: write` (to attach the signatures).
+3. **Verify (downloaders)** — Download the asset and its `.sig` and `.cert` from the release, then run the verify command below.
+
+### Verifying release signatures (downloaders)
 
 Release assets are signed with [Sigstore](https://sigstore.dev) (keyless). After downloading a release file and its `.sig` and `.cert` from the same GitHub release:
 
-1. Install the verifier: `pip install sigstore` (or `uv add sigstore`).
-2. Verify (example for a tarball):
-   ```bash
-   sigstore verify artifact path/to/contour-1.0.0.tar.gz \
-     --certificate path/to/contour-1.0.0.tar.gz.cert \
-     --signature path/to/contour-1.0.0.tar.gz.sig
-   ```
-   Or with the project's dev env: `uv run sigstore verify artifact <file> --certificate <file>.cert --signature <file>.sig`.
+**Option A — sigstore (Python)**  
+`pip install sigstore` (or `uv add sigstore`), then:
 
-The certificate is short-lived and was issued by Sigstore's Fulcio using GitHub Actions OIDC; the signature is recorded in Rekor. This confirms the artifact was produced by this repo's release workflow.
+```bash
+sigstore verify artifact path/to/contour-0.1.0.tar.gz \
+  --certificate path/to/contour-0.1.0.tar.gz.cert \
+  --signature path/to/contour-0.1.0.tar.gz.sig
+```
+
+Or with the project dev env: `uv run sigstore verify artifact <file> --certificate <file>.cert --signature <file>.sig`.
+
+**Option B — Cosign**  
+Install [cosign](https://docs.sigstore.dev/cosign/installation/), then:
+
+```bash
+cosign verify-blob <asset> \
+  --signature <asset>.sig \
+  --certificate <asset>.cert \
+  --certificate-identity "https://github.com/TheMapleseed/Contour/.github/workflows/release-sign.yml@refs/tags/v0.1.0" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Use the tag that matches your download (e.g. `refs/tags/v0.1.0` for release v0.1.0).
+
+The certificate is short-lived (Fulcio + GitHub OIDC); the signature is in Rekor. This confirms the artifact was produced by this repo’s release workflow.
 
 Report vulnerabilities responsibly (e.g. via the project’s issue tracker or security contact).

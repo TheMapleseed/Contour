@@ -1,27 +1,47 @@
-# Sign GitHub release assets with Sigstore (keyless, OIDC).
-# When you publish a release, this workflow signs all release artifacts and
-# uploads .sig and .cert files so downloaders can verify integrity.
-# See SECURITY.md for how to verify.
-name: Sign release with Sigstore
+# Build Python assets (.whl, .tar.gz), upload to the release, then sign with Sigstore (keyless).
+# When you publish a release, this workflow builds, uploads, and adds .sig/.cert for each asset.
+# See SECURITY.md for the "digital notary" explanation and how to verify.
+name: Build and sign release with Sigstore
 
 on:
   release:
     types: [published]
 
 permissions:
-  contents: write   # upload .sig and .cert to the release
-  id-token: write  # OIDC for keyless signing with Fulcio
+  contents: write   # upload built assets and .sig/.cert to the release
+  id-token: write  # OIDC "ID badge" for keyless signing with Fulcio
 
 jobs:
-  sign:
+  build-and-sign:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Build wheel and tarball
+        run: uv build
+
+      - name: Upload assets to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Sign release artifacts with Sigstore
         uses: sigstore/gh-action-sigstore-python@v3.2.0
         with:
-          # Sign all assets already on the release; upload .sig and .cert for each
           release-signing-artifacts: true
-          # Optional: verify after signing (uses tag ref as identity)
-          # verify: true
-          # verify-oidc-issuer: https://token.actions.githubusercontent.com
-          # verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/release-sign.yml@${{ github.ref }}
+          verify: true
+          verify-oidc-issuer: https://token.actions.githubusercontent.com
+          verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/release-sign.yml@${{ github.ref }}

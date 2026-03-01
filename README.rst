@@ -2,40 +2,59 @@
 Contour
 =======
 
-Thonny is a Python `IDE <https://en.wikipedia.org/wiki/Integrated_development_environment>`_ meant for learning programming.
+**Contour** is a Python IDE (based on Thonny) with AI chat (Pydantic AI, local GGUF models) and Marimo notebooks. This repo provides the **Contour** launcher and install script.
 
+Requirements
+------------
+- **Python 3.14+** on your PATH as ``python3.14``
+- Optional: **uv** (faster installs); otherwise ``pip`` is used
 
-Contour (this repo)
--------------------
-This variant adds AI chat (Pydantic AI, local GGUF models) and uses the **Contour** launcher.
+Build (developers)
+------------------
+From the repo root, run checks and formatting before committing:
 
-**Requirements:** Python 3.14 or newer on your PATH (as ``python3.14``).
+.. code-block:: bash
 
-**Install (choose one):**
+   ./format-and-check.sh
 
-  .. code-block:: bash
+This runs isort, Black, Ruff, and pyrefly. Requires dev dependencies: ``uv sync --group dev`` (or ``pip install -e ".[dev]"``). To build a wheel (optional): ``uv build`` (output in ``dist/``).
 
-     ./install              # create .venv and install (recommended)
-     Contour                # run from anywhere (new terminal or: source ~/.zshrc)
+Installation
+------------
+From the repo root (ensure ``install`` and ``Contour`` are executable: ``chmod +x install Contour``).
 
-  Or install into system Python and run with it:
+**Option A — venv (recommended)**
 
-  .. code-block:: bash
+.. code-block:: bash
 
-     ./install --system     # install into system Python 3.14
-     Contour --system      # run from anywhere
+   ./install
+   # Then open a new terminal or: source ~/.zshrc   (or source ~/.bashrc)
+   Contour
 
-  ``./install`` adds the repo to your PATH in ``~/.zshrc`` / ``~/.bashrc`` so you can run **Contour** from any directory. Open a new terminal or run ``source ~/.zshrc`` (or ``source ~/.bashrc``) first. To reinstall or upgrade: ``./install --force`` (or ``./install --force --system``). If you skip ``./install`` and run ``./Contour`` from the repo, it will install on first run and also add PATH.
+**Option B — system Python 3.14**
 
-**What gets installed:** The install script and Contour both install the project with extras ``pydantic-ai``, ``llama-cpp``, and ``marimo`` (AI chat, local GGUF models, Marimo notebooks). They use ``uv`` if it’s on your PATH, otherwise ``pip``.
+.. code-block:: bash
 
-**Run options:**
-  * **Default (venv):** ``Contour`` (from anywhere) or ``./Contour`` from the repo uses the ``.venv`` in the repo.
-  * **System Python:** ``Contour --system`` (or set ``CONTOUR_USE_SYSTEM=1``) uses system Python 3.14. You can also run ``python3.14 -m thonny`` from anywhere after a system install.
+   ./install --system
+   Contour --system
 
-**Marimo:** A **Marimo** tab appears in the left panel (next to Files). Use it to start `marimo <https://github.com/marimo-team/marimo>`_ (reactive Python notebook). Marimo is installed by default.
+  ``./install`` adds the repo to your PATH in ``~/.zshrc`` / ``~/.bashrc``. Use ``./install --force`` (or ``./install --force --system``) to reinstall or upgrade. If you run ``./Contour`` from the repo without ``./install`` first, Contour will create a venv and install on first run and add PATH for you.
 
-**Scripts:** ``install`` — install or upgrade (``./install``, ``./install --system``, ``./install --force``). ``Contour`` — run the IDE. In the repo root run ``chmod +x Contour install``. Full **Contour** script:
+**What gets installed:** Extras ``pydantic-ai``, ``llama-cpp``, ``marimo`` (and ``git`` when available) for AI chat, local GGUF models, and Marimo notebooks.
+
+Runtime
+-------
+- **Default (venv):** ``Contour`` from anywhere, or ``./Contour`` from the repo — uses ``.venv`` in the repo.
+- **System Python:** ``Contour --system`` or set ``CONTOUR_USE_SYSTEM=1`` — uses system Python 3.14. After a system install you can also run ``python3.14 -m thonny`` from anywhere.
+
+Marimo
+------
+A **Marimo** tab appears in the left panel (next to Files). Use it to start `marimo <https://github.com/marimo-team/marimo>`_ (reactive Python notebook). Marimo is installed by default.
+
+Scripts reference
+-----------------
+- **install** — install or upgrade (``./install``, ``./install --system``, ``./install --force``).
+- **Contour** — run the IDE (see ``Contour`` in the repo root). Full **Contour** script:
 
 .. code-block:: bash
 
