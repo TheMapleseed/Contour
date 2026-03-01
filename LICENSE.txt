@@ -1,6 +1,0 @@
-The open-source portions of Contour are licensed under the GNU General
-Public License v3.0 or later (GPL-3.0-or-later). See the file LICENSE in
-this directory for the full text.
-
-Proprietary portions are not covered by this license. Copyright (c) The
-Mapleseed Inc. All rights reserved. See COPYRIGHT for details.
