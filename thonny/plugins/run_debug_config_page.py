@@ -69,7 +69,7 @@ class RunDebugConfigurationPage(ConfigurationPage):
             tr("Birdseye port"),
             choices=[7777, 7778, 7779],
             width=8,
-            tooltip="Change if the first port is used by something else.\nRestart Thonny after changing.",
+            tooltip="Change if the first port is used by something else.\nRestart Contour after changing.",
         )
 
         self.columnconfigure(1, weight=1)

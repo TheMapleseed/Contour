@@ -555,6 +555,7 @@ def _download_bytes_curl(url: str, timeout: int = 10) -> bytes:
         import pycurl
     except ImportError:
         from urllib.request import Request, urlopen
+
         req = Request(
             url,
             headers={
@@ -566,6 +567,7 @@ def _download_bytes_curl(url: str, timeout: int = 10) -> bytes:
             data = fp.read()
         if fp.info().get("Content-Encoding") == "gzip":
             import gzip
+
             return gzip.decompress(data)
         return data
     buf = bytearray()
@@ -581,6 +583,7 @@ def _download_bytes_curl(url: str, timeout: int = 10) -> bytes:
         code = c.getinfo(pycurl.RESPONSE_CODE)
         if code != 200:
             from urllib.error import HTTPError
+
             raise HTTPError(url, code, "HTTP error", None, None)
         return bytes(buf)
     finally:
@@ -593,12 +596,16 @@ def fetch_page_httpx(url: str, timeout: int = 10) -> bytes:
     try:
         import httpx
     except ImportError:
-        raise RuntimeError("Page fetch requires httpx with http2: pip install 'httpx[http2]'") from None
+        raise RuntimeError(
+            "Page fetch requires httpx with http2: pip install 'httpx[http2]'"
+        ) from None
     with httpx.Client(http2=True, http1=False, timeout=timeout) as client:
         r = client.get(url, headers={"User-Agent": "Contour/1.0 (httpx)"})
         r.raise_for_status()
         if getattr(r, "http_version", None) != "HTTP/2":
-            raise RuntimeError(f"Page fetch requires HTTP/2; server used {getattr(r, 'http_version', 'unknown')}")
+            raise RuntimeError(
+                f"Page fetch requires HTTP/2; server used {getattr(r, 'http_version', 'unknown')}"
+            )
         return r.content
 
 

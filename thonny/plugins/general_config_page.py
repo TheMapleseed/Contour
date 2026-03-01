@@ -93,7 +93,7 @@ class GeneralConfigurationPage(ConfigurationPage):
 
         add_text_row(
             self,
-            tr("NB! Restart Thonny after changing these options!"),
+            tr("NB! Restart Contour after changing these options!"),
             font="BoldTkDefaultFont",
         )
 

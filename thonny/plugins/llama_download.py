@@ -20,20 +20,46 @@ def _ssl_context() -> ssl.SSLContext | None:
     """Use certifi's CA bundle so HTTPS works on macOS and other systems without system certs."""
     try:
         import certifi
+
         return ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         return None
 
+
 # Curated list of downloadable GGUF models: (display_name, hf_repo, hf_file)
 # Display name is shown in the UI; repo/file are used for Hugging Face download.
 DOWNLOADABLE_GGUF_MODELS: List[Tuple[str, str, str]] = [
-    ("TinyLlama 1.1B Chat (Q4_K_M, ~0.7 GB)", "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF", "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"),
+    (
+        "TinyLlama 1.1B Chat (Q4_K_M, ~0.7 GB)",
+        "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
+        "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+    ),
     ("Phi-2 (Q4_K_M, ~1.6 GB)", "TheBloke/phi-2-GGUF", "phi-2.Q4_K_M.gguf"),
-    ("Qwen2 0.5B Instruct (Q4_K_M, ~0.4 GB)", "Qwen/Qwen2-0.5B-Instruct-GGUF", "qwen2-0.5b-instruct-q4_k_m.gguf"),
-    ("SmolLM2 360M Instruct (Q4_K_M, ~0.3 GB)", "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF", "smollm2-360m-instruct-q4_k_m.gguf"),
-    ("Mistral 7B Instruct v0.2 (Q4_K_M, ~4.1 GB)", "TheBloke/Mistral-7B-Instruct-v0.2-GGUF", "mistral-7b-instruct-v0.2.Q4_K_M.gguf"),
-    ("Llama 3.2 1B Instruct (Q4_K_M, ~0.8 GB)", "bartowski/Llama-3.2-1B-Instruct-GGUF", "Llama-3.2-1B-Instruct-Q4_K_M.gguf"),
-    ("Llama 3.2 3B Instruct (Q4_K_M, ~2 GB)", "bartowski/Llama-3.2-3B-Instruct-GGUF", "Llama-3.2-3B-Instruct-Q4_K_M.gguf"),
+    (
+        "Qwen2 0.5B Instruct (Q4_K_M, ~0.4 GB)",
+        "Qwen/Qwen2-0.5B-Instruct-GGUF",
+        "qwen2-0.5b-instruct-q4_k_m.gguf",
+    ),
+    (
+        "SmolLM2 360M Instruct (Q4_K_M, ~0.3 GB)",
+        "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF",
+        "smollm2-360m-instruct-q4_k_m.gguf",
+    ),
+    (
+        "Mistral 7B Instruct v0.2 (Q4_K_M, ~4.1 GB)",
+        "TheBloke/Mistral-7B-Instruct-v0.2-GGUF",
+        "mistral-7b-instruct-v0.2.Q4_K_M.gguf",
+    ),
+    (
+        "Llama 3.2 1B Instruct (Q4_K_M, ~0.8 GB)",
+        "bartowski/Llama-3.2-1B-Instruct-GGUF",
+        "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+    ),
+    (
+        "Llama 3.2 3B Instruct (Q4_K_M, ~2 GB)",
+        "bartowski/Llama-3.2-3B-Instruct-GGUF",
+        "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+    ),
 ]
 
 RECOMMENDED_HF_REPO = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF"
@@ -134,7 +160,9 @@ def download_recommended_model(
     Returns the path to the .gguf file on success, None if already exists (and not force).
     Raises on network/SSL errors.
     """
-    return download_model(RECOMMENDED_HF_REPO, RECOMMENDED_HF_FILE, force=force, progress_callback=progress_callback)
+    return download_model(
+        RECOMMENDED_HF_REPO, RECOMMENDED_HF_FILE, force=force, progress_callback=progress_callback
+    )
 
 
 def download_model(

@@ -19,7 +19,7 @@ This document maps common Python hardening practices to Contour and what maintai
   - **Bandit** (dev): `uv run bandit -r thonny -c pyproject.toml` to find common issues. Excludes `thonny/vendored_libs` and tests.
   - **pip-audit** (dev): `uv run pip-audit` to check dependencies against known vulnerabilities. Run after dependency changes.
 - **Pinning:** Dependencies are pinned in `uv.lock` (or equivalent lockfile). Use the lockfile for reproducible installs.
-- **Sigstore** (dev): `sigstore` is in the dev group for signing and verifying artifacts (keyless signing, verification against the Sigstore transparency log). Use `uv run sigstore verify-artifact <file> --certificate <cert> --signature <sig>` or see [sigstore-python](https://sigstore.github.io/sigstore-python/) for signing releases or verifying supplied materials.
+- **Sigstore** (dev): `sigstore` is in the dev group for signing and verifying artifacts (keyless signing, verification against the Sigstore transparency log). **Releases:** When you publish a GitHub release, the workflow [`.github/workflows/release-sign.yml`](.github/workflows/release-sign.yml) signs all release assets using GitHub OIDC (no long-lived keys). Each asset gets a `.sig` and `.cert` file uploaded to the same release.
 
 ## 3. Data and secrets
 
@@ -42,5 +42,20 @@ uv run bandit -r thonny -c pyproject.toml
 uv run pip-audit
 uv run sigstore --help   # sign/verify artifacts
 ```
+
+## Verifying release signatures (downloaders)
+
+Release assets are signed with [Sigstore](https://sigstore.dev) (keyless). After downloading a release file and its `.sig` and `.cert` from the same GitHub release:
+
+1. Install the verifier: `pip install sigstore` (or `uv add sigstore`).
+2. Verify (example for a tarball):
+   ```bash
+   sigstore verify artifact path/to/contour-1.0.0.tar.gz \
+     --certificate path/to/contour-1.0.0.tar.gz.cert \
+     --signature path/to/contour-1.0.0.tar.gz.sig
+   ```
+   Or with the project's dev env: `uv run sigstore verify artifact <file> --certificate <file>.cert --signature <file>.sig`.
+
+The certificate is short-lived and was issued by Sigstore's Fulcio using GitHub Actions OIDC; the signature is recorded in Rekor. This confirms the artifact was produced by this repo's release workflow.
 
 Report vulnerabilities responsibly (e.g. via the project’s issue tracker or security contact).

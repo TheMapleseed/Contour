@@ -30,7 +30,9 @@ class UnixMicroPythonBackend(MicroPythonBackend, ABC):
     def _cmd_get_fs_info(self, cmd):
         # Pass path as Python literal so device shell never sees unsanitized path
         path_literal = repr(cmd.path)
-        script = "__minny_helper.os.system(\"stat -f -c '%b %f %a %S' \" + " + path_literal + ") or None"
+        script = (
+            "__minny_helper.os.system(\"stat -f -c '%b %f %a %S' \" + " + path_literal + ") or None"
+        )
         out, err = self._execute(script, capture_output=True)
 
         try:

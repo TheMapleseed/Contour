@@ -1,0 +1,27 @@
+# Sign GitHub release assets with Sigstore (keyless, OIDC).
+# When you publish a release, this workflow signs all release artifacts and
+# uploads .sig and .cert files so downloaders can verify integrity.
+# See SECURITY.md for how to verify.
+name: Sign release with Sigstore
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write   # upload .sig and .cert to the release
+  id-token: write  # OIDC for keyless signing with Fulcio
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sign release artifacts with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.2.0
+        with:
+          # Sign all assets already on the release; upload .sig and .cert for each
+          release-signing-artifacts: true
+          # Optional: verify after signing (uses tag ref as identity)
+          # verify: true
+          # verify-oidc-issuer: https://token.actions.githubusercontent.com
+          # verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/release-sign.yml@${{ github.ref }}

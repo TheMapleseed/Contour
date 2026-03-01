@@ -122,6 +122,7 @@ SyntaxThemeSettings = Dict[str, Dict[str, Union[str, int, bool]]]
 FlexibleSyntaxThemeSettings = Union[SyntaxThemeSettings, Callable[[], SyntaxThemeSettings]]
 
 OBSOLETE_PLUGINS = [
+    "thonny.plugins.marimo_view 2",  # duplicate of marimo_view.py
     "thonnycontrib.pi",
     "thonnycontrib.micropython",
     "thonnycontrib.circuitpython",
@@ -179,7 +180,7 @@ class Workbench(tk.Tk):
         self._tweak_environment()
         self._check_init_server_loop()
 
-        tk.Tk.__init__(self, className="Thonny")
+        tk.Tk.__init__(self, className="Contour")
         tk.Tk.report_callback_exception = self._on_tk_exception  # type: ignore
         ui_utils.add_messagebox_parent_checker()
         self._event_handlers = {}  # type: Dict[str, Set[Callable]]
@@ -513,7 +514,7 @@ class Workbench(tk.Tk):
                         ),
                     ),
                     processId=os.getpid(),
-                    clientInfo=ClientInfo(name="Thonny", version=thonny.get_version()),
+                    clientInfo=ClientInfo(name="Contour", version=thonny.get_version()),
                     locale=self.get_option("general.language"),
                     workspaceFolders=[
                         WorkspaceFolder(
@@ -538,7 +539,7 @@ class Workbench(tk.Tk):
         languages.set_language(self.get_option("general.language"))
 
     def _init_window(self) -> None:
-        self.title("Thonny")
+        self.title("Contour")
 
         self.set_default("layout.zoomed", False)
         self.set_default("layout.top", 50)
@@ -922,7 +923,7 @@ class Workbench(tk.Tk):
             self.add_command(
                 "quit",
                 "help",
-                tr("Exit Thonny"),
+                tr("Exit Contour"),
                 self._on_close,
                 image="quit",
                 caption=tr("Quit"),
@@ -1840,7 +1841,7 @@ class Workbench(tk.Tk):
                 tr("Regular mode"),
                 tr(
                     "Configuration has been updated. "
-                    + "Restart Thonny to start working in regular mode.\n\n"
+                    + "Restart Contour to start working in regular mode.\n\n"
                     + "(See 'Tools → Options → General' if you change your mind later.)"
                 ),
                 master=self,
@@ -2966,9 +2967,9 @@ class Workbench(tk.Tk):
     def update_title(self, event=None) -> None:
         editor = self.get_editor_notebook().get_current_editor()
         if self._is_portable:
-            title_text = "Portable Thonny"
+            title_text = "Portable Contour"
         else:
-            title_text = "Thonny"
+            title_text = "Contour"
 
         profile = self.get_profile()
         if profile != "default":
@@ -3165,7 +3166,7 @@ class Workbench(tk.Tk):
         if installation_version != embedded_version:
             messagebox.showwarning(
                 "Warning",
-                f"Thonny's installation version is reported as {installation_version!r},\n"
+                f"Contour's installation version is reported as {installation_version!r},\n"
                 + f"but embedded version is {embedded_version!r}.",
             )
 

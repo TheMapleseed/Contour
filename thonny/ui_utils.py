@@ -176,7 +176,7 @@ class CustomToolbutton(tk.Frame):
 class CommonDialog(tk.Toplevel):
     def __init__(self, master=None, skip_tk_dialog_attributes=False, **kw):
         assert master
-        super().__init__(master=master, class_="Thonny", **kw)
+        super().__init__(master=master, class_="Contour", **kw)
         self.withdraw()  # remain invisible until size calculations are done
 
         # Opening a dialog and minimizing everything with Win-D in Windows makes the main

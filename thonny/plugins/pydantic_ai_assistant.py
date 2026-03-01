@@ -256,12 +256,16 @@ def _messages_to_llama_chat(context: ChatContext, assistant: Assistant) -> List[
         messages.append({"role": "system", "content": instructions})
     for msg in context.messages:
         content = assistant.format_message(msg) if msg.role == "user" else (msg.content or "")
-        messages.append({
-            "role": msg.role if msg.role in ("user", "assistant", "system") else "user",
-            "content": content,
-        })
+        messages.append(
+            {
+                "role": msg.role if msg.role in ("user", "assistant", "system") else "user",
+                "content": content,
+            }
+        )
     if getattr(context, "git_info", None) and messages and messages[-1].get("role") == "user":
-        messages[-1]["content"] = f"Current git context:\n{context.git_info}\n\n---\n\n{messages[-1]['content']}"
+        messages[-1][
+            "content"
+        ] = f"Current git context:\n{context.git_info}\n\n---\n\n{messages[-1]['content']}"
     return messages
 
 
@@ -299,7 +303,9 @@ class PydanticAIAssistant(Assistant):
             if not base_url:
                 messagebox.showerror(
                     tr("Local backend"),
-                    tr("Set a model path (llama-cpp-python) or Base URL in Tools → Options → Pydantic AI."),
+                    tr(
+                        "Set a model path (llama-cpp-python) or Base URL in Tools → Options → Pydantic AI."
+                    ),
                     parent=get_workbench(),
                 )
                 return False
@@ -530,22 +536,28 @@ class PydanticAIConfigPage(ConfigurationPage):
         self._model_combobox = ttk.Combobox(path_frame, state="readonly", width=48)
         self._model_combobox.pack(side="left", fill="x", expand=True)
         self._model_combobox.bind("<<ComboboxSelected>>", self._on_model_selected)
-        ttk.Button(path_frame, text=tr("Delete selected model"), command=self._on_delete_model).pack(
-            side="right", padx=(5, 0)
-        )
+        ttk.Button(
+            path_frame, text=tr("Delete selected model"), command=self._on_delete_model
+        ).pack(side="right", padx=(5, 0))
         self._refresh_downloaded_models()
         # Downloadable models: list of (display_name, hf_repo, hf_file)
         row = get_last_grid_row(self) + 1
-        ttk.Label(self, text=tr("Download a model (GGUF):")).grid(row=row, column=0, sticky="w", pady=(8, 2))
+        ttk.Label(self, text=tr("Download a model (GGUF):")).grid(
+            row=row, column=0, sticky="w", pady=(8, 2)
+        )
         self._downloadable: List[Tuple[str, str, str]] = llama_download.get_downloadable_models()
         download_frame = ttk.Frame(self)
         download_frame.grid(row=row, column=1, sticky="ew", pady=(8, 2), padx=(5, 0))
         self._download_combobox = ttk.Combobox(download_frame, state="readonly", width=52)
-        self._download_combobox["values"] = [display_name for display_name, _repo, _file in self._downloadable]
+        self._download_combobox["values"] = [
+            display_name for display_name, _repo, _file in self._downloadable
+        ]
         self._download_combobox.pack(side="left", fill="x", expand=True)
         if self._downloadable:
             self._download_combobox.set(self._downloadable[0][0])
-        ttk.Button(download_frame, text=tr("Download"), command=self._on_download_selected).pack(side="right", padx=(5, 0))
+        ttk.Button(download_frame, text=tr("Download"), command=self._on_download_selected).pack(
+            side="right", padx=(5, 0)
+        )
         add_option_combobox(
             self,
             LLAMA_CHAT_FORMAT_OPTION,
@@ -668,6 +680,7 @@ class PydanticAIConfigPage(ConfigurationPage):
 
         def run_download() -> None:
             try:
+
                 def progress(pct: float, mb: float, total_mb: float) -> None:
                     wb.event_generate("<<LlamaDownloadProgress>>", when="tail")
                     dlg._last_pct, dlg._last_mb, dlg._last_total = pct, mb, total_mb
@@ -705,7 +718,9 @@ class PydanticAIConfigPage(ConfigurationPage):
                     pass
                 messagebox.showinfo(
                     tr("Download complete"),
-                    tr("Model installed. Restart Contour to load it, or use Chat now (may load in background)."),
+                    tr(
+                        "Model installed. Restart Contour to load it, or use Chat now (may load in background)."
+                    ),
                     parent=wb,
                 )
             else:
@@ -714,12 +729,17 @@ class PydanticAIConfigPage(ConfigurationPage):
                     err = (
                         tr("SSL certificate verification failed.")
                         + "\n\n"
-                        + tr("Reinstall Contour so certifi is installed: pip install -e \".[pydantic-ai,llama-cpp]\" then restart.")
+                        + tr(
+                            'Reinstall Contour so certifi is installed: pip install -e ".[pydantic-ai,llama-cpp]" then restart.'
+                        )
                         + " "
-                        + tr("Or on macOS: Applications → Python 3.x → \"Install Certificates.command\".")
+                        + tr(
+                            'Or on macOS: Applications → Python 3.x → "Install Certificates.command".'
+                        )
                         + "\n\n"
                         + tr("Original error:")
-                        + " " + err
+                        + " "
+                        + err
                     )
                 messagebox.showerror(tr("Download failed"), err, parent=wb)
 
@@ -728,6 +748,7 @@ class PydanticAIConfigPage(ConfigurationPage):
         thread.start()
         wb.after(100, check_done)
         show_dialog(dlg._win, wb)
+
 
 class _DownloadProgressDialog:
     """Shown while the recommended GGUF model is downloading. No buttons; closes when done."""

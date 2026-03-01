@@ -59,7 +59,7 @@ def run() -> int:
     if _should_delegate():
         try:
             _delegate_to_existing_instance(parsed_args)
-            print("Delegated to an existing Thonny instance. Exiting now.")
+            print("Delegated to an existing Contour instance. Exiting now.")
             return 0
         except Exception:
             import traceback
@@ -87,7 +87,7 @@ def run() -> int:
             # Messagebox may or may not be shown, but here it's no use of being defencive anymore
             messagebox.showerror(
                 title,
-                f"Thonny encountered an internal error:\n{str(e) or type(e)}"
+                f"Contour encountered an internal error:\n{str(e) or type(e)}"
                 f"\n\nSee frontend.log for more details",
                 parent=tk._default_root,
             )
@@ -216,7 +216,7 @@ def _parse_arguments_to_dict(raw_args: List[str]) -> Dict[str, Any]:
     )
 
     parser.add_argument(
-        "--version", help="Show Thonny version and exit", action="version", version=get_version()
+        "--version", help="Show Contour version and exit", action="version", version=get_version()
     )
 
     parser.add_argument(

@@ -625,7 +625,7 @@ class Replayer(tk.Toplevel):
         """
 
     def show(self):
-        self.title("Thonny")
+        self.title("Contour")
 
         get_workbench().set_default("replayer.zoomed", False)
         get_workbench().set_default("replayer.width", ems_to_pixels(70))

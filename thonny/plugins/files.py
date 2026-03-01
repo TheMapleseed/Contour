@@ -204,12 +204,7 @@ class ActiveLocalFileBrowser(BaseLocalFileBrowser):
         # sends the new cwd in ToplevelResponse; update workbench so the left pane follows.
         proxy = get_runner().get_backend_proxy()
         new_cwd = event.get("cwd") if hasattr(event, "get") else None
-        if (
-            proxy
-            and proxy.uses_local_filesystem()
-            and new_cwd
-            and os.path.isdir(new_cwd)
-        ):
+        if proxy and proxy.uses_local_filesystem() and new_cwd and os.path.isdir(new_cwd):
             normalized = normpath_with_actual_case(new_cwd)
             if get_workbench().get_local_cwd() != normalized:
                 get_workbench().set_local_cwd(normalized)

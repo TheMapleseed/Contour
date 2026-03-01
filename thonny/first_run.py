@@ -15,10 +15,10 @@ RPI_MODE_TEXT = "Simplified, with Raspberry Pi theme and line-based debugger"
 class FirstRunWindow(tk.Tk):
     def __init__(self, configuration_manager):
         logger.info("Creating FirstRunWindow")
-        super().__init__(className="Thonny")
+        super().__init__(className="Contour")
         ttk.Style().theme_use(ui_utils.get_default_basic_theme())
 
-        self.title("Welcome to Thonny!" + "   [portable]" if is_portable() else "")
+        self.title("Welcome to Contour!" + "   [portable]" if is_portable() else "")
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         self.ok = False
 

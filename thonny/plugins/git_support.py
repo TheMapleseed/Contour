@@ -28,6 +28,7 @@ def _get_pygit2():
     if _pygit2 is None:
         try:
             import pygit2
+
             _pygit2 = pygit2
         except ImportError:
             _pygit2 = False  # type: ignore[assignment]
@@ -39,6 +40,7 @@ def _get_dulwich():
     if _dulwich is None:
         try:
             import dulwich
+
             _dulwich = dulwich
         except ImportError:
             _dulwich = False  # type: ignore[assignment]
@@ -67,6 +69,7 @@ def _find_repo_dulwich(path: str) -> Optional[str]:
     if not dulwich:
         return None
     from dulwich.repo import NotGitRepository, Repo
+
     path = os.path.abspath(path)
     if not os.path.exists(path):
         path = os.path.dirname(path)
@@ -115,6 +118,7 @@ def _get_repo_dulwich(path: str) -> Tuple[Any, str, str]:
         return (None, "", "")
     try:
         from dulwich.repo import Repo
+
         repo = Repo(workdir)
         w = repo.path
         if os.path.basename(w) == ".git":
@@ -197,10 +201,12 @@ def get_status_for_dir(dir_path: str) -> Dict[str, str]:
         # dulwich
         try:
             from dulwich import porcelain
+
             st = porcelain.status(repo)
         except Exception as e:
             logger.debug("dulwich status failed for %s: %s", dir_path, e)
             return {}
+
         # GitStatus: staged={'add': [], 'delete': [], 'modify': []}, unstaged=[], untracked=[]
         def add_paths(paths: List[Any], letter: str) -> None:
             for p in paths:
@@ -212,6 +218,7 @@ def get_status_for_dir(dir_path: str) -> Dict[str, str]:
                 name = rel.split(os.sep)[0] if os.sep in rel else rel
                 if name and (name not in result or letter == "M"):
                     result[name] = letter
+
         for fp in st.staged.get("add", []):
             add_paths([fp], "A")
         for fp in st.staged.get("delete", []):
@@ -247,7 +254,7 @@ def get_branch_name(repo_path: Optional[str] = None) -> Optional[str]:
             return "detached"
         ref = _decode_path(ref)
         if ref.startswith("refs/heads/"):
-            return ref[len("refs/heads/"):]
+            return ref[len("refs/heads/") :]
         return ref
     except Exception:
         return None
@@ -278,6 +285,7 @@ def get_git_context_summary(cwd: str) -> Optional[str]:
                             lines.append(f"  {letter} {_decode_path(path)}")
         else:
             from dulwich import porcelain
+
             branch = get_branch_name(cwd) or "detached"
             st = porcelain.status(repo)
             lines = [f"Git repo: {workdir}", f"Branch: {branch}"]

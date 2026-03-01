@@ -29,7 +29,7 @@ MARIMO_SCRIPTS_URL = "https://docs.marimo.io/guides/scripts/"
 MARIMO_REPO_URL = "https://github.com/marimo-team/marimo"
 
 # Minimal marimo notebook (runs as: python notebook.py)
-MARIMO_TEMPLATE = '''import marimo as mo
+MARIMO_TEMPLATE = """import marimo as mo
 
 __generated_with = "marimo"
 app = mo.App()
@@ -45,12 +45,13 @@ def __():
 
 if __name__ == "__main__":
     app.run()
-'''
+"""
 
 
 def _marimo_available() -> bool:
     try:
         import marimo
+
         return True
     except ImportError:
         return False
@@ -73,7 +74,9 @@ def _create_new_notebook_file(cwd: str) -> str | None:
         name += ".py"
     path = os.path.join(cwd, name)
     if os.path.exists(path):
-        if not messagebox.askyesno(tr("Overwrite?"), tr("File exists. Overwrite?"), parent=get_workbench()):
+        if not messagebox.askyesno(
+            tr("Overwrite?"), tr("File exists. Overwrite?"), parent=get_workbench()
+        ):
             return None
     try:
         with open(path, "w", encoding="utf-8") as f:
@@ -95,10 +98,14 @@ class MarimoJournalView(ttk.Frame):
         body = ttk.Frame(self, padding=ems_to_pixels(2))
         body.grid(row=0, column=0, sticky="nsew")
         body.columnconfigure(0, weight=1)
-        ttk.Label(body, text=tr("Marimo (Python script)"), style="Bold.TLabel").grid(row=0, column=0, sticky="w", pady=(0, ems_to_pixels(0.5)))
+        ttk.Label(body, text=tr("Marimo (Python script)"), style="Bold.TLabel").grid(
+            row=0, column=0, sticky="w", pady=(0, ems_to_pixels(0.5))
+        )
         ttk.Label(
             body,
-            text=tr("Marimo notebooks are plain .py files. Open one in the editor, then press Run (F5). Output appears in the shell below."),
+            text=tr(
+                "Marimo notebooks are plain .py files. Open one in the editor, then press Run (F5). Output appears in the shell below."
+            ),
             wraplength=ems_to_pixels(50),
         ).grid(row=1, column=0, sticky="w", pady=(0, ems_to_pixels(0.5)))
         ttk.Label(
@@ -118,7 +125,9 @@ class MarimoView(ttk.Frame):
         self.rowconfigure(1, weight=1)
 
         header = ttk.Frame(self)
-        header.grid(row=0, column=0, sticky="ew", padx=ems_to_pixels(0.8), pady=(ems_to_pixels(0.5), 0))
+        header.grid(
+            row=0, column=0, sticky="ew", padx=ems_to_pixels(0.8), pady=(ems_to_pixels(0.5), 0)
+        )
         header.columnconfigure(0, weight=1)
         ttk.Label(header, text=tr("Marimo"), style="Bold.TLabel").grid(row=0, column=0, sticky="w")
         self._status = ttk.Label(header, text="", style="Small.TLabel")
@@ -137,15 +146,27 @@ class MarimoView(ttk.Frame):
             ).grid(row=0, column=0, sticky="w", pady=(0, ems_to_pixels(0.5)))
             btn_new = ttk.Button(content, text=tr("New notebook"), command=self._on_new_notebook)
             btn_new.grid(row=1, column=0, sticky="ew", pady=2)
-            btn_open = ttk.Button(content, text=tr("Open notebook…"), command=self._on_open_notebook)
+            btn_open = ttk.Button(
+                content, text=tr("Open notebook…"), command=self._on_open_notebook
+            )
             btn_open.grid(row=2, column=0, sticky="ew", pady=2)
-            btn_run = ttk.Button(content, text=tr("Run notebook (F5)"), command=self._on_run_notebook)
+            btn_run = ttk.Button(
+                content, text=tr("Run notebook (F5)"), command=self._on_run_notebook
+            )
             btn_run.grid(row=3, column=0, sticky="ew", pady=2)
-            ttk.Separator(content, orient="horizontal").grid(row=4, column=0, sticky="ew", pady=ems_to_pixels(0.5))
-            ttk.Label(content, text=tr("Docs"), style="Small.TLabel").grid(row=5, column=0, sticky="w", pady=(2, 0))
-            link_scripts = ttk.Label(content, text=tr("Run as script"), style="Url.TLabel", cursor="hand2")
+            ttk.Separator(content, orient="horizontal").grid(
+                row=4, column=0, sticky="ew", pady=ems_to_pixels(0.5)
+            )
+            ttk.Label(content, text=tr("Docs"), style="Small.TLabel").grid(
+                row=5, column=0, sticky="w", pady=(2, 0)
+            )
+            link_scripts = ttk.Label(
+                content, text=tr("Run as script"), style="Url.TLabel", cursor="hand2"
+            )
             link_scripts.grid(row=6, column=0, sticky="w")
-            link_scripts.bind("<ButtonRelease-1>", lambda e: get_workbench().open_url(MARIMO_SCRIPTS_URL))
+            link_scripts.bind(
+                "<ButtonRelease-1>", lambda e: get_workbench().open_url(MARIMO_SCRIPTS_URL)
+            )
             link_docs = ttk.Label(content, text=MARIMO_DOCS_URL, style="Url.TLabel", cursor="hand2")
             link_docs.grid(row=7, column=0, sticky="w")
             link_docs.bind("<ButtonRelease-1>", lambda e: get_workbench().open_url(MARIMO_DOCS_URL))
@@ -165,7 +186,12 @@ class MarimoView(ttk.Frame):
             link_repo = ttk.Label(content, text=MARIMO_REPO_URL, style="Url.TLabel", cursor="hand2")
             link_repo.grid(row=2, column=0, sticky="w", pady=(0, ems_to_pixels(0.3)))
             link_repo.bind("<ButtonRelease-1>", lambda e: get_workbench().open_url(MARIMO_REPO_URL))
-            link_docs = ttk.Label(content, text=tr("Docs") + ": " + MARIMO_DOCS_URL, style="Url.TLabel", cursor="hand2")
+            link_docs = ttk.Label(
+                content,
+                text=tr("Docs") + ": " + MARIMO_DOCS_URL,
+                style="Url.TLabel",
+                cursor="hand2",
+            )
             link_docs.grid(row=3, column=0, sticky="w")
             link_docs.bind("<ButtonRelease-1>", lambda e: get_workbench().open_url(MARIMO_DOCS_URL))
 
@@ -193,7 +219,9 @@ class MarimoView(ttk.Frame):
         else:
             messagebox.showinfo(
                 tr("Run notebook"),
-                tr("Open a marimo .py file in the editor, then press Run (F5) or click Run notebook."),
+                tr(
+                    "Open a marimo .py file in the editor, then press Run (F5) or click Run notebook."
+                ),
                 parent=get_workbench(),
             )
 

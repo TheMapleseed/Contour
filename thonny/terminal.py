@@ -112,7 +112,7 @@ def _run_in_terminal_in_linux(cmd, cwd, env, keep_open):
         # Wezterm needs each argument to be quoted separately
         parts = in_term_cmd.replace('"', "").split(
             " ", 2
-        )          # Split only twice to preserve the quoted command
+        )  # Split only twice to preserve the quoted command
 
         # cd into current working directory since wezterm doesn't mantain the working directory
         parts[2] = "cd " + _shellquote(cwd) + " ; " + parts[2]

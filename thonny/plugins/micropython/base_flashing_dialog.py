@@ -341,7 +341,9 @@ class BaseFlashingDialog(WorkDialog, ABC):
 
                 logger.info("Downloading %r", variant["info_url"])
                 try:
-                    html_str = fetch_page_httpx(variant["info_url"]).decode("UTF-8", errors="replace")
+                    html_str = fetch_page_httpx(variant["info_url"]).decode(
+                        "UTF-8", errors="replace"
+                    )
                     # logger.debug("Variants info: %r", json_str)
 
                     match = re.search(latest_prerelease_regex, html_str)
@@ -457,7 +459,9 @@ class BaseFlashingDialog(WorkDialog, ABC):
         # Prevent path traversal: keep only the base name
         target_filename = os.path.basename(target_filename)
         if not target_filename or target_filename.startswith(".") or ".." in target_filename:
-            target_filename = inferred_filename if url_protocol == "https" else os.path.basename(download_url)
+            target_filename = (
+                inferred_filename if url_protocol == "https" else os.path.basename(download_url)
+            )
         target_path = os.path.join(target_dir, target_filename)
 
         if url_protocol not in ["https"]:

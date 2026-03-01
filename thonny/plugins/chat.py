@@ -195,6 +195,7 @@ class ChatView(tktextext.TextFrame):
                         content=item.get("content", ""),
                         attachments=attachments,
                     )
+                )
             self._render_messages_to_text()
         except Exception as e:
             logger.warning("Could not load chat history: %s", e)
