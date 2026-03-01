@@ -17,7 +17,7 @@ From the repo root, run checks and formatting before committing:
 
    ./format-and-check.sh
 
-This runs isort, Black, Ruff, and pyrefly. Requires dev dependencies: ``uv sync --group dev`` (or ``pip install -e ".[dev]"``). To build a wheel (optional): ``uv build`` (output in ``dist/``).
+Requires dev dependencies: ``uv sync --group dev`` (or ``pip install -e ".[dev]"``). To build a wheel (optional): ``uv build`` (output in ``dist/``).
 
 Installation
 ------------
